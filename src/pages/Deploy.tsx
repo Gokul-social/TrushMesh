@@ -8,19 +8,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AnchorProvider, BN, Program, type Idl, type Wallet as AnchorWallet } from "@coral-xyz/anchor";
 import { Keypair, PublicKey, SystemProgram, Transaction, VersionedTransaction } from "@solana/web3.js";
 import confetti from "canvas-confetti";
-import * as d3 from "d3";
 import { z } from "zod";
 import { Buffer } from "buffer";
 import { apiClient } from "../lib/axios";
+import { randomHex, safeNumber, sha256Hex, unwrapEnvelope } from "../lib/utils";
+import type { ApiEnvelope, AuthUser, Job, JobTemplate } from "../types";
 import {
-  randomHex,
-  safeNumber,
-  sha256Hex,
-  truncateMiddle,
-  unwrapEnvelope
-} from "../lib/utils";
-import type { ApiEnvelope, AuthUser, Job } from "../types";
-import { ChevronRightIcon, CheckIcon } from "../components/Icons";
+  ArrowLeftIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  FingerprintIcon,
+  LockIcon,
+  PlusIcon,
+  RocketIcon
+} from "../components/Icons";
 import { ErrorCard, SkeletonBlock } from "../components/Feedback";
 import { trustmeshIdl } from "../idl/trustmesh";
 
@@ -47,6 +48,28 @@ const deploySchema = z.object({
 });
 
 type DeployFormValues = z.infer<typeof deploySchema>;
+
+const templateOptions: Array<{
+  value: JobTemplate;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "PORTFOLIO_REBALANCER",
+    label: "Portfolio Rebalancer",
+    description: "Coordinate trading agents against target allocations."
+  },
+  {
+    value: "DAO_VOTER",
+    label: "DAO Voter",
+    description: "Run governance review, verification, and execution flows."
+  },
+  {
+    value: "DATA_FETCHER",
+    label: "Data Fetcher",
+    description: "Ingest, sanitize, and route external data to executors."
+  }
+];
 
 function useDebouncedValue<T>(value: T, delay: number) {
   const [debounced, setDebounced] = useState(value);
@@ -82,26 +105,77 @@ function toAnchorWallet(wallet: WalletContextState): AnchorWallet | null {
   };
 }
 
-function buildPreviewTree(owner: string, planner: string, executors: string[]) {
-  const data = [
-    { id: "owner", parentId: null, label: owner || "owner.sol", human: true },
-    { id: "planner", parentId: "owner", label: planner || "planner.owner.sol", human: false },
-    ...executors.map((executor, index) => ({
-      id: `executor-${index}`,
-      parentId: "planner",
-      label: executor || `executor-${index + 1}.owner.sol`,
-      human: false
-    }))
-  ];
+function formatTemplateLabel(template: JobTemplate) {
+  return template.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
-  return d3
-    .tree<{ id: string; parentId: string | null; label: string; human: boolean }>()
-    .size([240, 170])(
-      d3
-        .stratify<{ id: string; parentId: string | null; label: string; human: boolean }>()
-        .id((node) => node.id)
-        .parentId((node) => node.parentId)(data)
-    );
+function StepMarker({
+  step,
+  currentStep,
+  label
+}: {
+  step: number;
+  currentStep: number;
+  label: string;
+}) {
+  const complete = currentStep > step;
+  const active = currentStep === step;
+
+  return (
+    <div className="relative flex flex-1 flex-col items-center">
+      <div
+        className={
+          active
+            ? "flex h-12 w-12 items-center justify-center rounded-full bg-silk-primary text-sm font-bold text-white shadow-[0_14px_24px_rgba(99,102,241,0.24)]"
+            : complete
+              ? "flex h-12 w-12 items-center justify-center rounded-full bg-silk-primary/85 text-sm font-bold text-white shadow-neo"
+              : "neo-raised flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold text-silk-text-secondary"
+        }
+      >
+        {complete ? <CheckIcon className="h-5 w-5" /> : step}
+      </div>
+      <span
+        className={
+          active
+            ? "mt-3 text-xs font-semibold text-silk-primary"
+            : complete
+              ? "mt-3 text-xs font-semibold text-silk-text-primary"
+              : "mt-3 text-xs font-medium text-silk-text-secondary"
+        }
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function PreviewNode({
+  eyebrow,
+  label,
+  caption,
+  accent = "primary"
+}: {
+  eyebrow: string;
+  label: string;
+  caption: string;
+  accent?: "primary" | "secondary" | "neutral";
+}) {
+  const accentClasses =
+    accent === "secondary"
+      ? "border-silk-secondary/20"
+      : accent === "neutral"
+        ? "border-white/60"
+        : "border-silk-primary/20";
+
+  return (
+    <div className={`tm-shell-card w-full max-w-[220px] border-2 ${accentClasses} px-4 py-4 text-center`}>
+      <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-silk-text-tertiary">
+        {eyebrow}
+      </div>
+      <div className="mt-2 truncate text-sm font-semibold text-silk-text-primary">{label}</div>
+      <div className="mt-1 text-[11px] text-silk-text-secondary">{caption}</div>
+    </div>
+  );
 }
 
 export function Deploy() {
@@ -146,8 +220,14 @@ export function Deploy() {
   });
 
   const plannerName = form.watch("plannerSubName");
+  const selectedTemplate = form.watch("template");
+  const executorEntries = form.watch("executorSubNames");
   const debouncedPlannerName = useDebouncedValue(plannerName, 400);
   const ownerName = ownerQuery.data?.solName ?? (wallet.publicKey ? "connected.sol" : "owner.sol");
+  const fullPlannerName = plannerName ? `${plannerName}.${ownerName}` : `planner.${ownerName}`;
+  const executorNames = executorEntries.map(({ value }, index) =>
+    value ? `${value}.${ownerName}` : `executor-${index + 1}.${ownerName}`
+  );
 
   const plannerValidationQuery = useQuery({
     queryKey: ["validate-planner", debouncedPlannerName, ownerName],
@@ -163,20 +243,6 @@ export function Deploy() {
         ).data
       )
   });
-
-  const previewTree = buildPreviewTree(
-    ownerName,
-    plannerName ? `${plannerName}.${ownerName}` : `planner.${ownerName}`,
-    form.watch("executorSubNames").map(({ value }) =>
-      value ? `${value}.${ownerName}` : `executor.${ownerName}`
-    )
-  );
-
-  const stepComplete = [
-    step > 1,
-    step > 2,
-    false
-  ];
 
   const moveNext = async () => {
     const fieldsByStep: Record<number, Array<keyof DeployFormValues>> = {
@@ -210,11 +276,7 @@ export function Deploy() {
       );
 
       const [jobPda] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("job"),
-          anchorWallet.publicKey.toBuffer(),
-          Buffer.from(onchainId, "hex")
-        ],
+        [Buffer.from("job"), anchorWallet.publicKey.toBuffer(), Buffer.from(onchainId, "hex")],
         programId
       );
 
@@ -273,60 +335,89 @@ export function Deploy() {
   });
 
   return (
-    <div className="min-h-screen bg-silk-bg px-5 pb-8 pt-20">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-semibold text-silk-text-primary">Deploy Wizard</h1>
-          <p className="mt-3 text-sm text-silk-text-secondary">
-            Initialize a new multi-agent TrustMesh job on Solana.
+    <div className="min-h-[calc(100vh-5rem)] p-4 pb-24 md:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1340px]">
+        <div className="mb-10 text-center">
+          <h1 className="text-4xl font-semibold tracking-tight text-silk-text-primary md:text-5xl">
+            Deploy Agent
+          </h1>
+          <p className="mt-3 text-base text-silk-text-secondary">
+            Initialize a new autonomous coordination mesh on Solana
           </p>
         </div>
 
-        <div className="mx-auto mb-10 flex max-w-2xl items-center justify-between gap-4">
-          {[1, 2, 3].map((value) => (
-            <div key={value} className="flex flex-1 items-center gap-3">
-              <div
-                className={value === step ? "neo-pill-inset flex h-12 w-12 items-center justify-center font-semibold text-silk-primary" : stepComplete[value - 1] ? "neo-pill flex h-12 w-12 items-center justify-center bg-silk-primary text-white shadow-neo" : "neo-pill flex h-12 w-12 items-center justify-center font-semibold text-silk-text-secondary"}
-              >
-                {stepComplete[value - 1] ? <CheckIcon className="h-5 w-5" /> : value}
-              </div>
-              {value < 3 ? <div className="h-1 flex-1 rounded-full bg-silk-bg shadow-neoInset" /> : null}
-            </div>
-          ))}
+        <div className="relative mx-auto mb-10 hidden max-w-4xl md:block">
+          <div className="absolute left-[10%] right-[10%] top-6 h-1 rounded-full bg-white/70 shadow-neoInset" />
+          <div className="absolute left-[10%] right-[10%] top-6">
+            <div
+              className="h-1 rounded-full bg-gradient-to-r from-silk-primary to-silk-secondary transition-all duration-300"
+              style={{ width: `${((step - 1) / 2) * 100}%` }}
+            />
+          </div>
+          <div className="relative flex items-start justify-between gap-4">
+            <StepMarker step={1} currentStep={step} label="Configure" />
+            <StepMarker step={2} currentStep={step} label="Identities" />
+            <StepMarker step={3} currentStep={step} label="Review" />
+          </div>
         </div>
 
-        <form className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]" onSubmit={deployJob}>
-          <div className="space-y-6">
+        <form className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]" onSubmit={deployJob}>
+          <div className="space-y-8">
             {step === 1 ? (
-              <section className="neo-raised p-6">
-                <h2 className="text-xl font-semibold text-silk-text-primary">Configure Job</h2>
-                <div className="mt-5 space-y-5">
+              <motion.section
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="tm-shell-card p-8"
+              >
+                <div className="flex items-center gap-3">
+                  <RocketIcon className="h-5 w-5 text-silk-primary" />
+                  <h2 className="text-2xl font-semibold text-silk-text-primary">Configure deployment</h2>
+                </div>
+
+                <div className="mt-8 space-y-6">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-silk-text-secondary">
-                      Describe the job
+                    <label className="mb-3 block text-sm font-medium text-silk-text-secondary">
+                      Job description
                     </label>
                     <textarea
                       rows={6}
-                      className="neo-input resize-none"
-                      placeholder="Describe the audit, coordination goal, or execution plan..."
+                      className="neo-input resize-none rounded-[22px]"
+                      placeholder="Describe the coordination objective, required agents, and expected output..."
                       {...form.register("description")}
                     />
                     <p className="mt-2 text-xs text-red-500">{form.formState.errors.description?.message}</p>
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-silk-text-secondary">
-                      Template
+                    <label className="mb-3 block text-sm font-medium text-silk-text-secondary">
+                      Mesh template
                     </label>
-                    <select className="neo-raised w-full bg-silk-bg px-4 py-3 text-sm text-silk-text-primary outline-none" {...form.register("template")}>
-                      <option value="PORTFOLIO_REBALANCER">Portfolio Rebalancer</option>
-                      <option value="DAO_VOTER">DAO Voter</option>
-                      <option value="DATA_FETCHER">Data Fetcher</option>
-                    </select>
+                    <div className="grid gap-4 lg:grid-cols-3">
+                      {templateOptions.map((option) => {
+                        const active = selectedTemplate === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            className={
+                              active
+                                ? "rounded-[24px] border border-silk-primary/30 bg-silk-bg px-5 py-5 text-left shadow-neoInset"
+                                : "rounded-[24px] border border-white/70 bg-silk-bg px-5 py-5 text-left shadow-neo"
+                            }
+                            onClick={() => form.setValue("template", option.value, { shouldValidate: true })}
+                          >
+                            <div className="text-sm font-semibold text-silk-text-primary">{option.label}</div>
+                            <div className="mt-2 text-sm leading-7 text-silk-text-secondary">
+                              {option.description}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-silk-text-secondary">
+                    <label className="mb-3 block text-sm font-medium text-silk-text-secondary">
                       Budget in SOL
                     </label>
                     <input
@@ -334,59 +425,78 @@ export function Deploy() {
                       step="0.01"
                       min="0.01"
                       max="100"
-                      className="neo-input"
+                      className="neo-input rounded-[22px]"
                       {...form.register("budgetSol")}
                     />
                     <p className="mt-2 text-xs text-red-500">{form.formState.errors.budgetSol?.message}</p>
                   </div>
                 </div>
-              </section>
+              </motion.section>
             ) : null}
 
             {step === 2 ? (
-              <section className="neo-raised p-6">
-                <h2 className="text-xl font-semibold text-silk-text-primary">Assign .sol Identities</h2>
-                <div className="mt-5 space-y-5">
+              <motion.section
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="tm-shell-card p-8"
+              >
+                <div className="flex items-center gap-3">
+                  <FingerprintIcon className="h-5 w-5 text-silk-secondary" />
+                  <h2 className="text-2xl font-semibold text-silk-text-primary">Assign .sol identities</h2>
+                </div>
+
+                <div className="mt-8 space-y-6">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-silk-text-secondary">Owner</label>
-                    <div className="neo-inset px-4 py-3 text-sm text-silk-primary">
-                      {ownerQuery.isLoading ? "Resolving owner..." : ownerName}
+                    <label className="mb-3 block text-sm font-medium text-silk-text-secondary">Mesh Owner</label>
+                    <div className="neo-inset flex items-center justify-between rounded-[22px] px-5 py-4">
+                      <span className="font-mono text-base text-silk-primary">
+                        {ownerQuery.isLoading ? "Resolving..." : ownerName}
+                      </span>
+                      <LockIcon className="h-4 w-4 text-silk-text-secondary" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-silk-text-secondary">
-                      Planner agent name
+                    <label className="mb-3 block text-sm font-medium text-silk-text-secondary">
+                      Planner Node sub-name
                     </label>
-                    <div className="relative">
-                      <input className="neo-input pr-12" {...form.register("plannerSubName")} placeholder="planner-alpha" />
-                      {plannerValidationQuery.data?.valid ? (
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
-                          <CheckIcon className="h-5 w-5" />
-                        </span>
-                      ) : null}
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <input
+                          className="neo-input rounded-[22px] pr-12"
+                          placeholder="alpha-planner"
+                          {...form.register("plannerSubName")}
+                        />
+                        {plannerValidationQuery.data?.valid ? (
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
+                            <CheckIcon className="h-5 w-5" />
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className="font-mono text-lg text-silk-text-secondary">.{ownerName}</span>
                     </div>
-                    <p className="mt-2 font-mono text-xs text-silk-text-secondary">
-                      Preview: {plannerName || "planner"}.{ownerName}
+                    <p className="mt-2 text-xs italic text-silk-text-secondary">
+                      This identity coordinates sub-tasks and assigns workloads.
                     </p>
                     <p className="mt-2 text-xs text-red-500">{form.formState.errors.plannerSubName?.message}</p>
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-silk-text-secondary">
-                      Executor agent names
+                    <label className="mb-3 block text-sm font-medium text-silk-text-secondary">
+                      Executor Node sub-name(s)
                     </label>
                     <div className="space-y-3">
                       {fields.fields.map((field, index) => (
                         <div key={field.id} className="flex items-center gap-3">
                           <input
-                            className="neo-input"
-                            placeholder={`executor-${index + 1}`}
+                            className="neo-input rounded-[22px]"
+                            placeholder={`exec-bot-${index + 1}`}
                             {...form.register(`executorSubNames.${index}.value`)}
                           />
+                          <span className="hidden font-mono text-silk-text-secondary md:block">.{ownerName}</span>
                           <button
                             type="button"
-                            className="neo-button h-12 px-4 text-silk-text-secondary"
+                            className="neo-button rounded-[18px] px-4 py-3 text-sm text-silk-text-secondary"
                             onClick={() => {
                               if (fields.fields.length > 1) {
                                 fields.remove(index);
@@ -400,129 +510,150 @@ export function Deploy() {
                     </div>
                     <button
                       type="button"
-                      className="neo-button mt-4 px-4 py-3 text-sm font-semibold text-silk-primary"
+                      className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-silk-primary"
                       onClick={() => fields.append({ value: "" })}
                     >
-                      + Add Executor
+                      <PlusIcon className="h-4 w-4" />
+                      <span>Add Another Executor</span>
                     </button>
                   </div>
                 </div>
-              </section>
+              </motion.section>
             ) : null}
 
             {step === 3 ? (
-              <section className="neo-raised p-6">
-                <h2 className="text-xl font-semibold text-silk-text-primary">Review & Deploy</h2>
-                <div className="mt-5 space-y-4">
-                  <div className="neo-raised p-5">
-                    <div className="text-sm font-semibold text-silk-text-primary">Job summary</div>
-                    <p className="mt-3 text-sm leading-7 text-silk-text-secondary">
+              <motion.section
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="tm-shell-card p-8"
+              >
+                <div className="flex items-center gap-3">
+                  <CheckIcon className="h-5 w-5 text-emerald-500" />
+                  <h2 className="text-2xl font-semibold text-silk-text-primary">Review & deploy</h2>
+                </div>
+
+                <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_220px]">
+                  <div className="rounded-[26px] border border-white/70 bg-silk-bg p-6 shadow-neoInset">
+                    <div className="text-sm font-semibold text-silk-text-primary">Deployment summary</div>
+                    <p className="mt-4 text-sm leading-8 text-silk-text-secondary">
                       {form.getValues("description")}
                     </p>
-                    <div className="mt-4 grid gap-3 text-sm text-silk-text-secondary">
-                      <div>Template: {form.getValues("template").replaceAll("_", " ")}</div>
+                    <div className="mt-6 grid gap-3 text-sm text-silk-text-secondary">
+                      <div>Template: {formatTemplateLabel(form.getValues("template"))}</div>
                       <div>Budget: {safeNumber(form.getValues("budgetSol"))} SOL</div>
-                      <div>
-                        Planner: {form.getValues("plannerSubName")}.{ownerName}
-                      </div>
-                      <div>
-                        Executors:{" "}
-                        {form
-                          .getValues("executorSubNames")
-                          .map((entry) => `${entry.value}.${ownerName}`)
-                          .join(", ")}
-                      </div>
+                      <div>Planner: {fullPlannerName}</div>
+                      <div>Executors: {executorNames.join(", ")}</div>
                     </div>
                   </div>
 
-                  <div className="neo-pill inline-flex items-center gap-3 text-sm font-semibold text-silk-text-primary">
-                    Gas estimate: {gasEstimateQuery.isLoading ? "..." : `${gasEstimateQuery.data ?? "0.002"} SOL`}
+                  <div className="space-y-4">
+                    <div className="tm-shell-card p-5">
+                      <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-silk-text-tertiary">
+                        Gas estimate
+                      </div>
+                      <div className="mt-3 text-2xl font-semibold text-silk-primary">
+                        {gasEstimateQuery.isLoading ? "..." : `${gasEstimateQuery.data ?? "0.002"} SOL`}
+                      </div>
+                    </div>
+                    <div className="tm-shell-card p-5">
+                      <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-silk-text-tertiary">
+                        Ownership
+                      </div>
+                      <div className="mt-3 font-mono text-sm text-silk-text-primary">{ownerName}</div>
+                    </div>
                   </div>
                 </div>
 
                 {deployError ? (
-                  <div className="mt-4">
+                  <div className="mt-6">
                     <ErrorCard title="Deployment failed" message={deployError} />
                   </div>
                 ) : null}
-              </section>
+              </motion.section>
             ) : null}
 
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row">
               <button
                 type="button"
-                className="neo-button px-5 py-3 text-sm font-semibold text-silk-text-secondary"
+                className="tm-button-ghost gap-2 self-start"
                 onClick={() => setStep((current) => Math.max(1, current - 1))}
                 disabled={step === 1}
               >
-                ← Back
+                <ArrowLeftIcon className="h-4 w-4" />
+                <span>Back</span>
               </button>
 
               {step < 3 ? (
-                <button
-                  type="button"
-                  className="neo-button inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-silk-primary"
-                  onClick={() => void moveNext()}
-                >
-                  Next <ChevronRightIcon className="h-4 w-4" />
+                <button type="button" className="tm-button-primary gap-2" onClick={() => void moveNext()}>
+                  <span>Next Step</span>
+                  <ChevronRightIcon className="h-4 w-4" />
                 </button>
               ) : (
-                <button
-                  type="submit"
-                  className="neo-button w-full max-w-xs px-5 py-4 text-sm font-semibold text-silk-primary"
-                  disabled={deploying}
-                >
-                  {deploying ? "Deploying..." : "Deploy to Solana"}
+                <button type="submit" className="tm-button-primary gap-2" disabled={deploying}>
+                  <span>{deploying ? "Deploying..." : "Deploy to Solana"}</span>
+                  <RocketIcon className="h-4 w-4" />
                 </button>
               )}
             </div>
           </div>
 
           <aside className="space-y-6">
-            <div className="neo-raised p-6">
-              <div className="text-sm font-semibold text-silk-text-primary">Live preview</div>
-              <div className="mt-5">
-                <svg className="h-[260px] w-full" viewBox="0 0 300 220">
-                  <g transform="translate(30,25)">
-                    {previewTree.links().map((link) => (
-                      <path
-                        key={`${link.source.id}-${link.target.id}`}
-                        d={`M ${link.source.x} ${link.source.y} C ${link.source.x} ${(link.source.y + link.target.y) / 2} ${link.target.x} ${(link.source.y + link.target.y) / 2} ${link.target.x} ${link.target.y}`}
-                        fill="none"
-                        stroke="#6366f1"
-                        strokeOpacity="0.28"
-                        strokeWidth="1.5"
-                      />
-                    ))}
-                    {previewTree.descendants().map((node) => (
-                      <g key={node.id} transform={`translate(${node.x}, ${node.y})`}>
-                        <circle r="24" fill="#e8eaf0" filter="url(#previewShadow)" />
-                        <circle r="24" fill="none" stroke="#6366f1" strokeWidth="2.5" />
-                        <text
-                          y="40"
-                          textAnchor="middle"
-                          className="fill-silk-text-secondary font-mono text-[9px]"
-                        >
-                          {truncateMiddle(node.data.label, 12, 4)}
-                        </text>
-                      </g>
-                    ))}
-                  </g>
-                  <defs>
-                    <filter id="previewShadow" x="-40%" y="-40%" width="180%" height="180%">
-                      <feDropShadow dx="4" dy="4" stdDeviation="5" floodColor="rgba(0,0,0,0.12)" />
-                    </filter>
-                  </defs>
-                </svg>
+            <div className="tm-shell-card sticky top-28 p-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.22em] text-silk-text-tertiary">
+                  Agent tree preview
+                </h3>
+                <span className="rounded-full bg-silk-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-silk-primary">
+                  Live
+                </span>
+              </div>
+
+              <div className="mt-8 flex flex-col items-center">
+                <PreviewNode eyebrow="Owner" label={ownerName} caption="Mesh owner" />
+                <div className="h-8 w-px bg-silk-primary/20" />
+                <PreviewNode
+                  eyebrow="Planner Node"
+                  label={fullPlannerName}
+                  caption="Coordinates workload"
+                  accent="secondary"
+                />
+                <div className="mt-8 h-px w-full max-w-[240px] bg-silk-primary/20" />
+                <div className="mt-4 grid w-full gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                  {executorNames.map((name, index) => (
+                    <PreviewNode
+                      key={`${name}-${index}`}
+                      eyebrow={`Executor ${String.fromCharCode(65 + index)}`}
+                      label={name}
+                      caption="Ready for delegation"
+                      accent="neutral"
+                    />
+                  ))}
+                  <div className="flex min-h-[112px] items-center justify-center rounded-[24px] border border-dashed border-silk-text-tertiary/40 bg-silk-bg/60 px-4 text-center text-xs font-semibold uppercase tracking-[0.22em] text-silk-text-tertiary shadow-neoInset">
+                    Pending slot
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 border-t border-white/60 pt-6">
+                <div className="flex items-center justify-between text-sm text-silk-text-secondary">
+                  <span>Estimated Rent (SOL)</span>
+                  <span className="font-mono font-semibold text-silk-text-primary">~0.0125</span>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-sm text-silk-text-secondary">
+                  <span>Identity Registration</span>
+                  <span className="font-mono font-semibold text-silk-text-primary">~0.0050</span>
+                </div>
               </div>
             </div>
 
-            <div className="neo-raised p-6">
-              <div className="text-sm font-semibold text-silk-text-primary">Connected owner</div>
+            <div className="tm-shell-card p-6">
+              <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-silk-text-tertiary">
+                Connected owner
+              </div>
               {ownerQuery.isLoading ? (
                 <SkeletonBlock className="mt-4 h-12 rounded-[18px]" />
               ) : (
-                <div className="neo-inset mt-4 px-4 py-3 text-sm text-silk-primary">
+                <div className="neo-inset mt-4 rounded-[20px] px-4 py-3 text-sm font-mono text-silk-primary">
                   {ownerName}
                 </div>
               )}

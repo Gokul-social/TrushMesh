@@ -52,6 +52,70 @@ body {
   @apply rounded-full bg-silk-bg px-4 py-2 shadow-neoInset;
 }
 
+.tm-shell-card {
+  @apply rounded-[28px] border border-white/70 bg-silk-bg shadow-neo;
+}
+
+.tm-button-primary {
+  @apply inline-flex items-center justify-center rounded-full bg-gradient-to-r from-silk-primary to-[#7a6cff] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_32px_rgba(99,102,241,0.28)] transition duration-200 hover:-translate-y-0.5;
+}
+
+.tm-button-ghost {
+  @apply inline-flex items-center justify-center rounded-full border border-white/80 bg-silk-bg px-6 py-3 text-sm font-semibold text-silk-primary shadow-neo transition duration-200 hover:-translate-y-0.5;
+}
+
+.tm-kicker {
+  @apply inline-flex items-center rounded-full border border-white/70 bg-silk-bg/90 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.28em] text-silk-primary shadow-neoInset;
+}
+
+.tm-grid-bg {
+  background-image:
+    linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+.tm-hero-illustration {
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.9), transparent 20%),
+    radial-gradient(circle at 72% 32%, rgba(99, 102, 241, 0.26), transparent 24%),
+    radial-gradient(circle at 64% 72%, rgba(124, 58, 237, 0.18), transparent 18%),
+    linear-gradient(135deg, rgba(55, 65, 81, 0.35), rgba(148, 163, 184, 0.15)),
+    linear-gradient(180deg, rgba(232, 234, 240, 0.9), rgba(214, 216, 222, 0.8));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -18px 40px rgba(71, 85, 105, 0.12),
+    6px 6px 12px rgba(0, 0, 0, 0.08),
+    -6px -6px 12px rgba(255, 255, 255, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.tm-hero-illustration::before,
+.tm-hero-illustration::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.tm-hero-illustration::before {
+  background-image:
+    linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.45) 40%, transparent 70%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+  background-size: 100% 100%, 26px 26px, 26px 26px;
+  opacity: 0.7;
+}
+
+.tm-hero-illustration::after {
+  background:
+    linear-gradient(140deg, transparent 0 44%, rgba(255, 255, 255, 0.6) 45% 46%, transparent 47% 100%),
+    linear-gradient(18deg, transparent 0 54%, rgba(99, 102, 241, 0.22) 55% 56%, transparent 57% 100%),
+    linear-gradient(200deg, transparent 0 38%, rgba(255, 255, 255, 0.7) 39% 40%, transparent 41% 100%);
+  mix-blend-mode: screen;
+  opacity: 0.8;
+}
+
 .silk-scrollbar {
   scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
   scrollbar-width: thin;
@@ -84,6 +148,20 @@ body {
   font-family: "Plus Jakarta Sans", sans-serif !important;
   font-size: 0.95rem !important;
   font-weight: 600 !important;
+}
+
+.wallet-adapter-button.tm-wallet-primary,
+.wallet-adapter-button-trigger.tm-wallet-primary {
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 14px 32px rgba(99, 102, 241, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24) !important;
+}
+
+.wallet-adapter-button.tm-wallet-primary:hover,
+.wallet-adapter-button-trigger.tm-wallet-primary:hover {
+  background: linear-gradient(135deg, #5b5eea, #7130eb) !important;
 }
 
 .wallet-adapter-dropdown-list {
