@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../lib/axios";
+import { runtimeConfig } from "../lib/runtimeConfig";
 import { useWebSocket } from "../lib/websocket";
 import {
   formatStatusLabel,
@@ -36,7 +37,8 @@ export function Explorer() {
             }
           })
         ).data
-      )
+      ),
+    refetchInterval: runtimeConfig.enableRealtime ? false : runtimeConfig.pollingIntervalMs
   });
 
   const statsQuery = useQuery({

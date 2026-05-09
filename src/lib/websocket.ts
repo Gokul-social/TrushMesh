@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getJwtFromLocalStorage } from "./utils";
+import { runtimeConfig } from "./runtimeConfig";
 import { useAgentStore } from "../stores/agentStore";
 import type { Agent, AgentMessage, AgentStatus, JobStatus, WsEvent } from "../types";
 
@@ -144,6 +145,11 @@ export function useWebSocket({ jobId, enabled = true }: UseWebSocketOptions): Us
       return;
     }
 
+    if (!runtimeConfig.enableRealtime) {
+      setConnected(false);
+      return;
+    }
+
     const token = getJwtFromLocalStorage();
     if (!token) {
       setConnected(false);
@@ -151,7 +157,7 @@ export function useWebSocket({ jobId, enabled = true }: UseWebSocketOptions): Us
     }
 
     shouldReconnectRef.current = true;
-    const endpoint = new URL("ws://localhost:3001/ws");
+    const endpoint = new URL(runtimeConfig.webSocketUrl);
     endpoint.searchParams.set("jobId", jobId);
     endpoint.searchParams.set("token", token);
 

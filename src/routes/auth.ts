@@ -35,12 +35,16 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const issuedAt = new Date();
     const expiresAt = new Date(issuedAt.getTime() + 5 * 60 * 1000);
     const nonce = createNonce();
+    const requestOrigin =
+      typeof request.headers.origin === "string" && request.headers.origin.length > 0
+        ? request.headers.origin
+        : env.FRONTEND_URL;
     const message = buildSiwsMessage({
       walletAddr: body.walletAddr,
       nonce,
       issuedAt,
       expiresAt,
-      domain: new URL(env.FRONTEND_URL).origin
+      domain: new URL(requestOrigin).origin
     });
 
     await setJson(

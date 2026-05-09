@@ -31,6 +31,7 @@ export type AppServices = {
 export type BuildServerOptions = {
   logger?: FastifyServerOptions["logger"];
   disableRateLimit?: boolean;
+  disableWebsocket?: boolean;
   services?: Partial<AppServices>;
 };
 
@@ -51,10 +52,21 @@ export async function buildServer(options: BuildServerOptions = {}) {
 
   registerErrorHandlers(app);
 
+  const allowedOrigins = new Set(
+    [
+      env.FRONTEND_URL,
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+      process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : null,
+      process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : null
+    ].filter((origin): origin is string => Boolean(origin))
+  );
+
   await app.register(cors, {
     credentials: true,
     origin(origin, callback) {
-      if (!origin || origin === env.FRONTEND_URL) {
+      if (!origin || allowedOrigins.has(origin)) {
         callback(null, true);
         return;
       }
@@ -82,7 +94,9 @@ export async function buildServer(options: BuildServerOptions = {}) {
     secret: env.JWT_SECRET
   });
 
-  await app.register(websocket);
+  if (!options.disableWebsocket) {
+    await app.register(websocket);
+  }
   await app.register(authPlugin);
 
   await app.register(registerAuthRoutes, { prefix: `${API_PREFIX}/auth` });
@@ -91,7 +105,9 @@ export async function buildServer(options: BuildServerOptions = {}) {
   await app.register(registerMessageRoutes, { prefix: `${API_PREFIX}/messages` });
   await app.register(registerStatsRoutes, { prefix: `${API_PREFIX}/stats` });
   await app.register(registerGraphRoutes, { prefix: `${API_PREFIX}/graph` });
-  await registerWebsocketRoutes(app);
+  if (!options.disableWebsocket) {
+    await registerWebsocketRoutes(app);
+  }
 
   return app;
 }

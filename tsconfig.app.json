@@ -22,6 +22,7 @@
     "src/stores/**/*",
     "src/types/**/*",
     "src/lib/axios.ts",
+    "src/lib/runtimeConfig.ts",
     "src/lib/utils.ts",
     "src/lib/websocket.ts",
     "src/idl/**/*.ts",

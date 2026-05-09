@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { apiClient } from "../lib/axios";
+import { runtimeConfig } from "../lib/runtimeConfig";
 import { formatRelativeTime, truncateMiddle, unwrapEnvelope } from "../lib/utils";
 import { useAgentStore } from "../stores/agentStore";
 import type { AgentMessage, ApiEnvelope, MessagePage } from "../types";
@@ -45,7 +46,8 @@ export function MessageTimeline({ jobId }: MessageTimelineProps) {
           })
         ).data
       ),
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    refetchInterval: runtimeConfig.enableRealtime ? false : runtimeConfig.pollingIntervalMs
   });
 
   const pagedMessages = messagesQuery.data?.pages.flatMap((page) => page.items) ?? [];

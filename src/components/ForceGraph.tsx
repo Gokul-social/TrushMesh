@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import * as d3 from "d3";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../lib/axios";
+import { runtimeConfig } from "../lib/runtimeConfig";
 import { useAgentStore } from "../stores/agentStore";
 import { statusColor, unwrapEnvelope } from "../lib/utils";
 import type { Agent, ApiEnvelope, Delegation, GraphSnapshot } from "../types";
@@ -64,7 +65,8 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
             await apiClient.get<ApiEnvelope<GraphSnapshot>>(`/graph/${jobId}`)
           ).data
         )
-      )
+      ),
+    refetchInterval: runtimeConfig.enableRealtime ? false : runtimeConfig.pollingIntervalMs
   });
 
   const setSnapshot = useAgentStore((state) => state.setSnapshot);

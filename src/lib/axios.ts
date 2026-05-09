@@ -1,8 +1,9 @@
 import axios from "axios";
 import { getJwtFromLocalStorage } from "./utils";
+import { runtimeConfig } from "./runtimeConfig";
 
 export const apiClient = axios.create({
-  baseURL: "http://localhost:3001/api/v1",
+  baseURL: runtimeConfig.apiBaseUrl,
   withCredentials: false
 });
 

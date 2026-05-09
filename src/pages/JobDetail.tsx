@@ -4,6 +4,7 @@ import * as d3 from "d3";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { apiClient } from "../lib/axios";
+import { runtimeConfig } from "../lib/runtimeConfig";
 import { useWebSocket } from "../lib/websocket";
 import { downloadJson, formatStatusLabel, statusColor, unwrapEnvelope } from "../lib/utils";
 import { useAgentStore } from "../stores/agentStore";
@@ -39,7 +40,8 @@ function HierarchyTree({ jobId, ownerLabel }: { jobId: string; ownerLabel: strin
         (
           await apiClient.get<ApiEnvelope<GraphSnapshot>>(`/graph/${jobId}`)
         ).data
-      )
+      ),
+    refetchInterval: runtimeConfig.enableRealtime ? false : runtimeConfig.pollingIntervalMs
   });
 
   useEffect(() => {
@@ -166,7 +168,8 @@ export function JobDetail() {
     queryKey: ["job", jobId],
     enabled: Boolean(jobId),
     queryFn: async () =>
-      unwrapEnvelope((await apiClient.get<ApiEnvelope<Job>>(`/jobs/${jobId}`)).data)
+      unwrapEnvelope((await apiClient.get<ApiEnvelope<Job>>(`/jobs/${jobId}`)).data),
+    refetchInterval: runtimeConfig.enableRealtime ? false : runtimeConfig.pollingIntervalMs
   });
 
   const exportAuditLog = async () => {

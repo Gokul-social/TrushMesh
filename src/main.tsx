@@ -6,6 +6,7 @@ import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 import { Buffer } from "buffer";
 import { App } from "./App";
+import { runtimeConfig } from "./lib/runtimeConfig";
 import "./styles.css";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
@@ -23,7 +24,7 @@ const queryClient = new QueryClient({
   }
 });
 
-const endpoint = "http://127.0.0.1:8899";
+const endpoint = runtimeConfig.solanaRpcUrl;
 const wallets = [new PhantomWalletAdapter()];
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
