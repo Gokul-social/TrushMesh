@@ -1,0 +1,122 @@
+import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
+import cors from "@fastify/cors";
+import jwt from "@fastify/jwt";
+import rateLimit from "@fastify/rate-limit";
+import websocket from "@fastify/websocket";
+import type { PrismaClient } from "@prisma/client";
+import { Connection } from "@solana/web3.js";
+import { API_PREFIX } from "./lib/constants.js";
+import { env } from "./lib/env.js";
+import { loggerOptions } from "./lib/logger.js";
+import { prisma as defaultPrisma } from "./lib/prisma.js";
+import { registerErrorHandlers } from "./middleware/errorHandler.js";
+import { authPlugin } from "./middleware/auth.js";
+import { TrustMeshAnchorService, type AnchorVerifier } from "./services/anchor.js";
+import { createRedisConnection, type RedisLike } from "./services/redis.js";
+import { SnsService, type SnsResolver } from "./services/sns.js";
+import { WebSocketHub } from "./websocket/hub.js";
+import { registerWebsocketRoutes } from "./websocket/index.js";
+import { registerAuthRoutes } from "./routes/auth.js";
+import { registerJobRoutes } from "./routes/jobs.js";
+import { registerAgentRoutes } from "./routes/agents.js";
+import { registerMessageRoutes } from "./routes/messages.js";
+import { registerStatsRoutes } from "./routes/stats.js";
+import { registerGraphRoutes } from "./routes/graph.js";
+
+export type AppServices = {
+  prisma: PrismaClient;
+  redis: RedisLike;
+  redisPub: RedisLike;
+  redisSub: RedisLike;
+  sns: SnsResolver;
+  anchor: AnchorVerifier;
+  wsHub: WebSocketHub;
+};
+
+export type BuildServerOptions = {
+  logger?: FastifyServerOptions["logger"];
+  disableRateLimit?: boolean;
+  services?: Partial<AppServices>;
+};
+
+declare module "fastify" {
+  interface FastifyInstance {
+    services: AppServices;
+  }
+}
+
+export async function buildServer(options: BuildServerOptions = {}) {
+  const app = Fastify({
+    logger: options.logger ?? loggerOptions,
+    trustProxy: true
+  });
+
+  const services = createServices(options.services);
+  app.decorate("services", services);
+
+  registerErrorHandlers(app);
+
+  await app.register(cors, {
+    credentials: true,
+    origin(origin, callback) {
+      if (!origin || origin === env.FRONTEND_URL) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error("CORS origin not allowed"), false);
+    }
+  });
+
+  if (!options.disableRateLimit) {
+    await app.register(rateLimit, {
+      max: 100,
+      timeWindow: "1 minute",
+      errorResponseBuilder() {
+        return {
+          data: null,
+          error: {
+            code: "RATE_LIMITED",
+            message: "Rate limit exceeded"
+          }
+        };
+      }
+    });
+  }
+
+  await app.register(jwt, {
+    secret: env.JWT_SECRET
+  });
+
+  await app.register(websocket);
+  await app.register(authPlugin);
+
+  await app.register(registerAuthRoutes, { prefix: `${API_PREFIX}/auth` });
+  await app.register(registerJobRoutes, { prefix: `${API_PREFIX}/jobs` });
+  await app.register(registerAgentRoutes, { prefix: `${API_PREFIX}/agents` });
+  await app.register(registerMessageRoutes, { prefix: `${API_PREFIX}/messages` });
+  await app.register(registerStatsRoutes, { prefix: `${API_PREFIX}/stats` });
+  await app.register(registerGraphRoutes, { prefix: `${API_PREFIX}/graph` });
+  await registerWebsocketRoutes(app);
+
+  return app;
+}
+
+function createServices(overrides: Partial<AppServices> = {}): AppServices {
+  const redis = overrides.redis ?? (createRedisConnection("cache") as unknown as RedisLike);
+  const redisPub = overrides.redisPub ?? (createRedisConnection("pub") as unknown as RedisLike);
+  const redisSub = overrides.redisSub ?? (createRedisConnection("sub") as unknown as RedisLike);
+  const connection = new Connection(env.SOLANA_RPC_URL, "confirmed");
+  const sns = overrides.sns ?? new SnsService(redis, connection);
+  const anchor = overrides.anchor ?? new TrustMeshAnchorService(connection);
+  const wsHub = overrides.wsHub ?? new WebSocketHub(redisSub);
+
+  return {
+    prisma: overrides.prisma ?? defaultPrisma,
+    redis,
+    redisPub,
+    redisSub,
+    sns,
+    anchor,
+    wsHub
+  };
+}
