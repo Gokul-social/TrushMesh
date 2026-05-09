@@ -1,0 +1,9 @@
+process.env.DATABASE_URL = "postgresql://trustmesh:trustmesh@localhost:5432/trustmesh_test";
+process.env.REDIS_URL = "redis://localhost:6379";
+process.env.JWT_SECRET = "test-secret-test-secret-test-secret-test-secret";
+process.env.SOLANA_RPC_URL = "https://api.devnet.solana.com";
+process.env.ANCHOR_PROGRAM_ID = "11111111111111111111111111111111";
+process.env.SNS_PROGRAM_ID = "namesLPneVptA9Z5rqUDD9tMTWEJwofgaYwp8cawRkX";
+process.env.FRONTEND_URL = "http://localhost:3000";
+process.env.PORT = "3001";
+process.env.NODE_ENV = "test";
