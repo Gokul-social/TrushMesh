@@ -1,197 +1,173 @@
-import { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { REDIS_KEYS } from "../lib/constants.js";
 import { ok } from "../lib/envelope.js";
 import { AppError } from "../lib/errors.js";
-import { paginationQuerySchema, parseWith } from "../lib/schemas.js";
 import { iso } from "../lib/serialize.js";
+import { createMessageBodySchema, parseWith } from "../lib/schemas.js";
 import { assertJobOwner } from "../middleware/access.js";
-import { canonicalAgentMessage, verifyAgentMessage } from "../services/crypto.js";
-import { incrementWithTtl } from "../services/redis.js";
+import { verifyEd25519Signature } from "../services/crypto.js";
+import { resolveNameToWallet } from "../services/sns.js";
 import { publishJobEvent } from "../websocket/broadcast.js";
-
-const listMessagesQuerySchema = paginationQuerySchema.extend({
-  jobId: z.string().min(1)
-});
-
-const createMessageBodySchema = z.object({
-  jobId: z.string().min(1),
-  senderId: z.string().min(1),
-  receiverId: z.string().min(1).nullable().optional(),
-  action: z.string().trim().min(3).max(2000),
-  txHash: z.string().min(8),
-  signatureHex: z.string().regex(/^[0-9a-fA-F]{128}$/)
-});
 
 export async function registerMessageRoutes(app: FastifyInstance) {
   app.addHook("preHandler", app.authenticate);
 
   app.get("/", async (request, reply) => {
-    const query = parseWith(listMessagesQuerySchema, request.query);
+    const query = parseWith(
+      z.object({
+        jobId: z.string().min(1),
+        cursor: z.string().optional(),
+        limit: z.coerce.number().int().min(1).max(200).default(25)
+      }),
+      request.query
+    );
     const limit = query.limit ?? 25;
+
     await assertJobOwner(app, query.jobId, request.authUser.id);
 
     const messages = await app.services.prisma.agentMessage.findMany({
       where: { jobId: query.jobId },
       take: limit + 1,
-      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
+      ...(query.cursor
+        ? {
+            cursor: { id: query.cursor },
+            skip: 1
+          }
+        : {}),
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      select: messageSelect
+      include: {
+        sender: {
+          select: {
+            solSubName: true
+          }
+        },
+        receiver: {
+          select: {
+            solSubName: true
+          }
+        }
+      }
     });
 
     const hasNextPage = messages.length > limit;
-    const page = hasNextPage ? messages.slice(0, -1) : messages;
-    return reply.send(ok(page.map(mapMessage), { nextCursor: hasNextPage ? page[page.length - 1]?.id : null }));
+    const slice = hasNextPage ? messages.slice(0, limit) : messages;
+
+    return reply.send(
+      ok({
+        items: slice.map((message) => ({
+          id: message.id,
+          jobId: message.jobId,
+          senderId: message.senderId,
+          senderName: message.sender.solSubName,
+          receiverId: message.receiverId,
+          receiverName: message.receiver?.solSubName ?? null,
+          action: message.action,
+          txHash: message.txHash,
+          signatureHex: message.signatureHex,
+          verified: message.verified,
+          createdAt: iso(message.createdAt)
+        })),
+        nextCursor: hasNextPage ? slice[slice.length - 1]?.id ?? null : null
+      })
+    );
   });
 
   app.post("/", async (request, reply) => {
     const body = parseWith(createMessageBodySchema, request.body);
-    await assertJobOwner(app, body.jobId, request.authUser.id);
-
-    const sender = await app.services.prisma.agent.findFirst({
-      where: { id: body.senderId, jobId: body.jobId, ownerId: request.authUser.id },
-      select: { id: true, solSubName: true }
+    const job = await app.services.prisma.job.findUnique({
+      where: { id: body.jobId },
+      select: { id: true, status: true }
     });
-    if (!sender) {
-      throw new AppError("VALIDATION_ERROR", "Sender agent must belong to the job");
+
+    if (!job) {
+      throw new AppError("NOT_FOUND", "Job not found");
     }
 
-    const receiver = body.receiverId
+    if (job.status !== "ACTIVE") {
+      return reply.status(409).send({ error: "JOB_NOT_ACTIVE" });
+    }
+
+    let senderWalletAddress: string;
+    try {
+      senderWalletAddress = await resolveNameToWallet(body.senderSolName);
+    } catch {
+      return reply.status(422).send({ error: "SNS_RESOLUTION_FAILED" });
+    }
+
+    const sender = await app.services.prisma.agent.findFirst({
+      where: {
+        jobId: body.jobId,
+        solSubName: body.senderSolName
+      },
+      select: {
+        id: true,
+        status: true
+      }
+    });
+
+    if (!sender) {
+      return reply.status(404).send({ error: "AGENT_NOT_FOUND" });
+    }
+
+    if (sender.status !== "ACTIVE") {
+      return reply.status(409).send({ error: "AGENT_REVOKED" });
+    }
+
+    const receiver = body.receiverSolName
       ? await app.services.prisma.agent.findFirst({
-          where: { id: body.receiverId, jobId: body.jobId, ownerId: request.authUser.id },
-          select: { id: true, solSubName: true }
+          where: {
+            jobId: body.jobId,
+            solSubName: body.receiverSolName
+          },
+          select: { id: true }
         })
       : null;
 
-    if (body.receiverId && !receiver) {
-      throw new AppError("VALIDATION_ERROR", "Receiver agent must belong to the job");
-    }
-
-    const signedMessage = canonicalAgentMessage({
-      jobId: body.jobId,
-      senderSolName: sender.solSubName,
-      receiverSolName: receiver?.solSubName ?? null,
-      action: body.action,
-      txHash: body.txHash
-    });
-
-    const senderWallet = await app.services.sns.resolveNameToWallet(sender.solSubName);
-    const verified = safeVerify(signedMessage, body.signatureHex, senderWallet);
+    const verified = await verifyEd25519Signature(body.action, body.signatureHex, senderWalletAddress);
     if (!verified) {
-      await incrementWithTtl(app.services.redis, REDIS_KEYS.unauthorizedCounter, 60 * 60);
-      await app.services.redis.del(REDIS_KEYS.statsGlobal);
-      throw new AppError("ONCHAIN_MISMATCH", "Agent message signature did not verify", {
-        expected: { signer: sender.solSubName, wallet: senderWallet },
-        actual: { txHash: body.txHash }
-      });
+      return reply.status(422).send({ error: "INVALID_SIGNATURE" });
     }
 
-    try {
-      const created = await app.services.prisma.$transaction(async (tx) => {
-        const message = await tx.agentMessage.create({
-          data: {
-            jobId: body.jobId,
-            senderId: body.senderId,
-            receiverId: body.receiverId ?? null,
-            action: body.action,
-            txHash: body.txHash,
-            signatureHex: body.signatureHex,
-            verified
-          },
-          select: messageSelect
-        });
-
-        await tx.agent.update({
-          where: { id: body.senderId },
-          data: { actionCount: { increment: 1 } },
-          select: { id: true }
-        });
-
-        return message;
+    const createdMessage = await app.services.prisma.$transaction(async (tx) => {
+      const message = await tx.agentMessage.create({
+        data: {
+          jobId: body.jobId,
+          senderId: sender.id,
+          receiverId: receiver?.id ?? null,
+          action: body.action,
+          txHash: body.txHash,
+          signatureHex: body.signatureHex,
+          verified: true
+        }
       });
 
-      await publishJobEvent(app.services, body.jobId, { type: "NEW_MESSAGE", message: mapMessage(created) });
-      return reply.status(201).send(ok(mapMessage(created)));
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        throw new AppError("CONFLICT", "Message tx hash already exists for this sender");
-      }
-      throw error;
-    }
-  });
+      await tx.agent.update({
+        where: { id: sender.id },
+        data: {
+          actionCount: {
+            increment: 1
+          }
+        }
+      });
 
-  app.get("/:id/verify", async (request, reply) => {
-    const params = parseWith(z.object({ id: z.string().min(1) }), request.params);
-    const message = await app.services.prisma.agentMessage.findFirst({
-      where: {
-        id: params.id,
-        job: { ownerId: request.authUser.id }
-      },
-      select: messageSelect
+      return message;
     });
 
-    if (!message) {
-      throw new AppError("NOT_FOUND", "Message not found");
-    }
+    const responseMessage = {
+      id: createdMessage.id,
+      jobId: createdMessage.jobId,
+      senderId: createdMessage.senderId,
+      senderName: body.senderSolName,
+      receiverId: createdMessage.receiverId,
+      receiverName: body.receiverSolName ?? null,
+      action: createdMessage.action,
+      txHash: createdMessage.txHash,
+      signatureHex: createdMessage.signatureHex,
+      verified: createdMessage.verified,
+      createdAt: iso(createdMessage.createdAt)
+    };
 
-    const signedMessage = canonicalAgentMessage({
-      jobId: message.jobId,
-      senderSolName: message.sender.solSubName,
-      receiverSolName: message.receiver?.solSubName ?? null,
-      action: message.action,
-      txHash: message.txHash
-    });
-
-    const senderWallet = await app.services.sns.resolveNameToWallet(message.sender.solSubName);
-    const verified = safeVerify(signedMessage, message.signatureHex, senderWallet);
-
-    if (verified !== message.verified) {
-      await app.services.prisma.agentMessage.update({
-        where: { id: message.id },
-        data: { verified },
-        select: { id: true }
-      });
-      await app.services.redis.del(REDIS_KEYS.statsGlobal);
-    }
-
-    return reply.send(ok({ id: message.id, verified }));
+    await publishJobEvent(body.jobId, { type: "NEW_MESSAGE", message: responseMessage });
+    return reply.status(201).send(ok(responseMessage));
   });
-}
-
-const messageSelect = {
-  id: true,
-  jobId: true,
-  action: true,
-  txHash: true,
-  signatureHex: true,
-  verified: true,
-  createdAt: true,
-  sender: { select: { id: true, solSubName: true, type: true } },
-  receiver: { select: { id: true, solSubName: true, type: true } }
-} satisfies Prisma.AgentMessageSelect;
-
-function safeVerify(message: string, signatureHex: string, wallet: string) {
-  try {
-    return verifyAgentMessage(message, signatureHex, wallet);
-  } catch {
-    return false;
-  }
-}
-
-function mapMessage(message: {
-  id: string;
-  jobId: string;
-  action: string;
-  txHash: string;
-  signatureHex: string;
-  verified: boolean;
-  createdAt: Date;
-  sender: { id: string; solSubName: string; type: string };
-  receiver: { id: string; solSubName: string; type: string } | null;
-}) {
-  return {
-    ...message,
-    createdAt: iso(message.createdAt)
-  };
 }

@@ -18,5 +18,5 @@ export const REDIS_KEYS = {
 };
 
 export function jobChannel(jobId: string) {
-  return `trustmesh:job:${jobId}`;
+  return `job:${jobId}`;
 }

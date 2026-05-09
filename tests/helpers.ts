@@ -1,5 +1,5 @@
-import { buildServer, type AppServices } from "../src/server.js";
-import { WebSocketHub } from "../src/websocket/hub.js";
+import type { PrismaClient } from "@prisma/client";
+import { buildServer } from "../src/server.js";
 
 export const testUser = {
   id: "user_1",
@@ -9,50 +9,27 @@ export const testUser = {
 };
 
 export class MemoryRedis {
-  readonly store = new Map<string, string>();
-  readonly listeners = new Map<string, Array<(...args: unknown[]) => void>>();
-
-  async get(key: string) {
-    return this.store.get(key) ?? null;
+  async get(_key: string) {
+    return null;
   }
 
-  async set(key: string, value: string) {
-    this.store.set(key, value);
+  async set(_key: string, _value: string) {
     return "OK";
   }
 
-  async del(...keys: string[]) {
-    for (const key of keys) {
-      this.store.delete(key);
-    }
-    return keys.length;
-  }
-
-  async publish(channel: string, message: string) {
-    for (const listener of this.listeners.get("message") ?? []) {
-      listener(channel, message);
-    }
+  async del(..._keys: string[]) {
     return 1;
   }
 
-  async subscribe() {
+  async publish(_channel: string, _message: string) {
     return 1;
   }
 
-  on(event: string, listener: (...args: unknown[]) => void) {
-    const listeners = this.listeners.get(event) ?? [];
-    listeners.push(listener);
-    this.listeners.set(event, listeners);
-    return this;
+  async incr(_key: string) {
+    return 1;
   }
 
-  async incr(key: string) {
-    const next = Number(this.store.get(key) ?? 0) + 1;
-    this.store.set(key, String(next));
-    return next;
-  }
-
-  async expire() {
+  async expire(_key: string, _seconds: number) {
     return 1;
   }
 
@@ -61,67 +38,80 @@ export class MemoryRedis {
   }
 }
 
-export function makeBasePrisma(overrides: Record<string, unknown> = {}) {
-  return {
+type PrismaOverrides = {
+  user?: Record<string, unknown>;
+  job?: Record<string, unknown>;
+  agent?: Record<string, unknown>;
+  agentMessage?: Record<string, unknown>;
+  $transaction?: unknown;
+  $disconnect?: unknown;
+};
+
+export function makeBasePrisma(overrides: PrismaOverrides = {}) {
+  const txClient = {
+    user: {
+      ...(overrides.user ?? {})
+    },
+    job: {
+      ...(overrides.job ?? {})
+    },
+    agent: {
+      ...(overrides.agent ?? {})
+    },
+    agentMessage: {
+      ...(overrides.agentMessage ?? {})
+    }
+  };
+
+  const prismaLike: Record<string, unknown> = {
     user: {
       findUnique: async () => testUser,
       upsert: async () => testUser,
-      update: async () => testUser
+      update: async () => testUser,
+      ...(overrides.user ?? {})
     },
     job: {
-      findFirst: async () => ({ id: "job_1", onchainId: "A7F3C2", ownerId: testUser.id, status: "ACTIVE" }),
-      findUnique: async () => ({ id: "job_1", onchainId: "A7F3C2" }),
-      count: async () => 1
+      findUnique: async () => null,
+      findFirst: async () => null,
+      create: async () => null,
+      update: async () => null,
+      findMany: async () => [],
+      count: async () => 0,
+      ...(overrides.job ?? {})
     },
     agent: {
-      count: async () => 0
+      findUnique: async () => null,
+      findFirst: async () => null,
+      findMany: async () => [],
+      update: async () => null,
+      updateMany: async () => ({ count: 0 }),
+      count: async () => 0,
+      ...(overrides.agent ?? {})
     },
     agentMessage: {
-      count: async () => 0
+      create: async () => null,
+      count: async () => 0,
+      ...(overrides.agentMessage ?? {})
     },
-    $disconnect: async () => undefined,
-    ...overrides
+    $transaction:
+      overrides.$transaction ??
+      (async <T>(callback: (tx: typeof txClient) => Promise<T>) => callback(txClient)),
+    $disconnect: overrides.$disconnect ?? (async () => undefined)
   };
+
+  return prismaLike as unknown as PrismaClient;
 }
 
-export function makeAnchor(overrides: Partial<AppServices["anchor"]> = {}) {
-  return {
-    verifyDelegationLog: async () => true,
-    verifyRevocationTx: async () => true,
-    extractAgentMessage: async () => null,
-    ...overrides
-  };
-}
-
-export function makeSns(overrides: Partial<AppServices["sns"]> = {}) {
-  return {
-    resolveWalletToName: async () => "alice.sol",
-    resolveNameToWallet: async () => testUser.walletAddr,
-    ...overrides
-  };
-}
-
-export async function makeTestApp(input: {
-  prisma?: Record<string, unknown>;
-  sns?: AppServices["sns"];
-  anchor?: AppServices["anchor"];
-} = {}) {
-  const redis = new MemoryRedis();
-  const redisPub = new MemoryRedis();
-  const redisSub = new MemoryRedis();
+export async function makeTestApp(prismaOverrides: PrismaOverrides = {}) {
   const app = await buildServer({
     logger: false,
     disableRateLimit: true,
     services: {
-      prisma: makeBasePrisma(input.prisma) as unknown as AppServices["prisma"],
-      redis,
-      redisPub,
-      redisSub,
-      sns: input.sns ?? makeSns(),
-      anchor: input.anchor ?? makeAnchor(),
-      wsHub: new WebSocketHub(redisSub)
+      prisma: makeBasePrisma(prismaOverrides),
+      redis: new MemoryRedis()
     }
   });
+
   await app.ready();
   return app;
 }

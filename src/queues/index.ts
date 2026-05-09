@@ -1,4 +1,5 @@
 import { buildServer } from "../server.js";
+import { redis, redisPublisher, redisSubscriber } from "../lib/redis.js";
 import { createAgentSyncWorker, scheduleActiveJobSyncs } from "./agentSync.js";
 import { createSnsRefreshWorker, scheduleSnsRefresh } from "./snsRefresh.js";
 
@@ -16,9 +17,9 @@ const shutdown = async () => {
   await snsRefreshWorker.close();
   await app.close();
   await app.services.prisma.$disconnect();
-  await app.services.redis.quit?.();
-  await app.services.redisPub.quit?.();
-  await app.services.redisSub.quit?.();
+  await redis.quit?.();
+  await redisPublisher.quit?.();
+  await redisSubscriber.quit?.();
   process.exit(0);
 };
 

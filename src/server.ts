@@ -4,17 +4,15 @@ import jwt from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
 import websocket from "@fastify/websocket";
 import type { PrismaClient } from "@prisma/client";
-import { Connection } from "@solana/web3.js";
 import { API_PREFIX } from "./lib/constants.js";
 import { env } from "./lib/env.js";
 import { loggerOptions } from "./lib/logger.js";
 import { prisma as defaultPrisma } from "./lib/prisma.js";
+import { redis as defaultRedis, type RedisLike } from "./lib/redis.js";
 import { registerErrorHandlers } from "./middleware/errorHandler.js";
 import { authPlugin } from "./middleware/auth.js";
-import { TrustMeshAnchorService, type AnchorVerifier } from "./services/anchor.js";
-import { createRedisConnection, type RedisLike } from "./services/redis.js";
-import { SnsService, type SnsResolver } from "./services/sns.js";
-import { WebSocketHub } from "./websocket/hub.js";
+import { anchorService, type AnchorVerifier } from "./services/anchor.js";
+import { createSnsResolver, type SnsResolver } from "./services/sns.js";
 import { registerWebsocketRoutes } from "./websocket/index.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerJobRoutes } from "./routes/jobs.js";
@@ -26,11 +24,8 @@ import { registerGraphRoutes } from "./routes/graph.js";
 export type AppServices = {
   prisma: PrismaClient;
   redis: RedisLike;
-  redisPub: RedisLike;
-  redisSub: RedisLike;
   sns: SnsResolver;
   anchor: AnchorVerifier;
-  wsHub: WebSocketHub;
 };
 
 export type BuildServerOptions = {
@@ -102,21 +97,14 @@ export async function buildServer(options: BuildServerOptions = {}) {
 }
 
 function createServices(overrides: Partial<AppServices> = {}): AppServices {
-  const redis = overrides.redis ?? (createRedisConnection("cache") as unknown as RedisLike);
-  const redisPub = overrides.redisPub ?? (createRedisConnection("pub") as unknown as RedisLike);
-  const redisSub = overrides.redisSub ?? (createRedisConnection("sub") as unknown as RedisLike);
-  const connection = new Connection(env.SOLANA_RPC_URL, "confirmed");
-  const sns = overrides.sns ?? new SnsService(redis, connection);
-  const anchor = overrides.anchor ?? new TrustMeshAnchorService(connection);
-  const wsHub = overrides.wsHub ?? new WebSocketHub(redisSub);
+  const redis = overrides.redis ?? defaultRedis;
+  const sns = overrides.sns ?? createSnsResolver(redis);
+  const anchor = overrides.anchor ?? anchorService;
 
   return {
     prisma: overrides.prisma ?? defaultPrisma,
     redis,
-    redisPub,
-    redisSub,
     sns,
-    anchor,
-    wsHub
+    anchor
   };
 }

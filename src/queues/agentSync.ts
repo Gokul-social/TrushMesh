@@ -1,29 +1,41 @@
-import { Queue, Worker, type JobsOptions } from "bullmq";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Queue, Worker } from "bullmq";
+import { PublicKey } from "@solana/web3.js";
 import type { AppServices } from "../server.js";
-import { AGENT_SYNC_QUEUE } from "../lib/constants.js";
-import { env } from "../lib/env.js";
-import { createRedisConnection } from "../services/redis.js";
-import { canonicalAgentMessage, verifyAgentMessage } from "../services/crypto.js";
-import { publishJobEvent } from "../websocket/broadcast.js";
+import { AGENT_SYNC_QUEUE, jobChannel } from "../lib/constants.js";
+import { createRedisConnection, redisPublisher } from "../lib/redis.js";
+import { logger } from "../lib/logger.js";
+import { getDescendants, mapOnchainAgentStatus } from "../services/agentLifecycle.js";
+import { deriveJobPda, getAgentAccountData } from "../services/anchor.js";
+import { resolveNameToWallet } from "../services/sns.js";
 
-export const SYNC_AGENT_ACTIONS = "SYNC_AGENT_ACTIONS";
+export type AgentSyncPayload = {
+  jobId: string;
+  agentWallets: Array<{
+    agentId: string;
+    wallet: string;
+    jobPubkey: string;
+  }>;
+};
 
-export function createAgentSyncQueue() {
-  return new Queue(AGENT_SYNC_QUEUE, {
+const REPEAT_EVERY_MS = 15000;
+const SYNC_JOB_NAME = "sync";
+
+let queueInstance: Queue<AgentSyncPayload> | null = null;
+
+function getQueue() {
+  queueInstance ??= new Queue<AgentSyncPayload>(AGENT_SYNC_QUEUE, {
     connection: createRedisConnection("bullmq")
   });
+  return queueInstance;
 }
 
-export function createAgentSyncWorker(services: AppServices) {
-  const connection = new Connection(env.SOLANA_RPC_URL, "confirmed");
-  return new Worker(
+export function createAgentSyncWorker(_services: AppServices) {
+  return new Worker<AgentSyncPayload>(
     AGENT_SYNC_QUEUE,
     async (job) => {
-      if (job.name !== SYNC_AGENT_ACTIONS) {
-        return;
+      for (const agentWallet of job.data.agentWallets) {
+        await syncAgent(job.data.jobId, agentWallet);
       }
-      await syncAgentActions(services, connection, job.data.jobId as string);
     },
     {
       connection: createRedisConnection("bullmq"),
@@ -32,124 +44,137 @@ export function createAgentSyncWorker(services: AppServices) {
   );
 }
 
-export async function scheduleActiveJobSyncs(services: AppServices, queue = createAgentSyncQueue()) {
+export async function scheduleAgentSync(jobId: string, agentWallets: AgentSyncPayload["agentWallets"]) {
+  await getQueue().add(
+    SYNC_JOB_NAME,
+    { jobId, agentWallets },
+    {
+      repeat: { every: REPEAT_EVERY_MS },
+      jobId: `sync-${jobId}`,
+      removeOnComplete: true
+    }
+  );
+}
+
+export async function cancelAgentSync(jobId: string) {
+  await getQueue().removeRepeatable(SYNC_JOB_NAME, {
+    every: REPEAT_EVERY_MS,
+    jobId: `sync-${jobId}`
+  });
+}
+
+export async function scheduleActiveJobSyncs(services: AppServices) {
   const activeJobs = await services.prisma.job.findMany({
     where: { status: "ACTIVE" },
-    select: { id: true }
-  });
-
-  const repeat: JobsOptions = {
-    repeat: { every: 15000 },
-    removeOnComplete: 50,
-    removeOnFail: 100
-  };
-
-  for (const activeJob of activeJobs) {
-    await queue.add(SYNC_AGENT_ACTIONS, { jobId: activeJob.id }, { ...repeat, jobId: `sync:${activeJob.id}` });
-  }
-}
-
-async function syncAgentActions(
-  services: AppServices,
-  connection: Connection,
-  jobId: string
-) {
-  const job = await services.prisma.job.findUnique({
-    where: { id: jobId },
-    select: { id: true, onchainId: true }
-  });
-
-  if (!job) {
-    return;
-  }
-
-  const agents = await services.prisma.agent.findMany({
-    where: { jobId, status: { not: "REVOKED" } },
-    select: { id: true, solSubName: true }
-  });
-
-  for (const agent of agents) {
-    const wallet = await resolveWalletSafely(services, agent.solSubName);
-    if (!wallet) {
-      continue;
-    }
-
-    const signatures = await connection.getSignaturesForAddress(new PublicKey(wallet), { limit: 20 });
-    for (const signature of signatures) {
-      const existing = await services.prisma.agentMessage.findFirst({
-        where: { senderId: agent.id, txHash: signature.signature },
-        select: { id: true }
-      });
-      if (existing) {
-        continue;
-      }
-
-      const onchain = await services.anchor.extractAgentMessage(signature.signature);
-      if (!onchain || onchain.jobOnchainId !== job.onchainId || onchain.senderSolName !== agent.solSubName) {
-        continue;
-      }
-
-      const receiver = onchain.receiverSolName
-        ? await services.prisma.agent.findFirst({
-            where: { jobId, solSubName: onchain.receiverSolName },
-            select: { id: true, solSubName: true }
-          })
-        : null;
-
-      const canonical = canonicalAgentMessage({
-        jobId,
-        senderSolName: onchain.senderSolName,
-        receiverSolName: receiver?.solSubName ?? null,
-        action: onchain.action,
-        txHash: signature.signature
-      });
-
-      const verified = verifyAgentMessage(canonical, onchain.signatureHex, wallet);
-      if (!verified) {
-        continue;
-      }
-
-      const message = await services.prisma.agentMessage.create({
-        data: {
-          jobId,
-          senderId: agent.id,
-          receiverId: receiver?.id ?? null,
-          action: onchain.action,
-          txHash: signature.signature,
-          signatureHex: onchain.signatureHex,
-          verified
-        },
+    include: {
+      owner: {
+        select: { walletAddr: true }
+      },
+      agents: {
         select: {
           id: true,
-          jobId: true,
-          action: true,
-          txHash: true,
-          signatureHex: true,
-          verified: true,
-          createdAt: true,
-          sender: { select: { id: true, solSubName: true, type: true } },
-          receiver: { select: { id: true, solSubName: true, type: true } }
+          solSubName: true
         }
-      });
-
-      await services.prisma.agent.update({
-        where: { id: agent.id },
-        data: { actionCount: { increment: 1 } },
-        select: { id: true }
-      });
-
-      await publishJobEvent(services, jobId, {
-        type: "NEW_MESSAGE",
-        message: { ...message, createdAt: message.createdAt.toISOString() }
-      });
+      }
     }
+  });
+
+  for (const job of activeJobs) {
+    const jobPubkey = deriveJobPda(job.owner.walletAddr, job.onchainId).toBase58();
+    const agentWallets = (
+      await Promise.all(
+        job.agents.map(async (agent) => {
+          try {
+            const wallet = await resolveNameToWallet(agent.solSubName);
+            return {
+              agentId: agent.id,
+              wallet,
+              jobPubkey
+            };
+          } catch (error) {
+            logger.warn({ err: error, agentId: agent.id }, "skipping agent sync scheduling for unresolved SNS name");
+            return null;
+          }
+        })
+      )
+    ).filter((entry): entry is AgentSyncPayload["agentWallets"][number] => entry !== null);
+
+    await scheduleAgentSync(job.id, agentWallets);
   }
 }
 
-async function resolveWalletSafely(services: AppServices, solName: string) {
+async function syncAgent(
+  jobId: string,
+  agentWallet: AgentSyncPayload["agentWallets"][number]
+) {
   try {
-    return await services.sns.resolveNameToWallet(solName);
-  } catch {
-    return null;
+    const onchain = await getAgentAccountData(new PublicKey(agentWallet.jobPubkey), agentWallet.wallet);
+    if (!onchain) {
+      return;
+    }
+
+    const { prisma } = (await import("../lib/prisma.js"));
+    const dbAgent = await prisma.agent.findUnique({
+      where: { id: agentWallet.agentId },
+      select: {
+        id: true,
+        jobId: true,
+        status: true,
+        actionCount: true
+      }
+    });
+
+    if (!dbAgent) {
+      return;
+    }
+
+    const onchainStatus = mapOnchainAgentStatus(onchain.status);
+    if (onchainStatus === "REVOKED" && dbAgent.status === "ACTIVE") {
+      const revokedAt = new Date();
+      const descendants = await prisma.$transaction(async (tx) => {
+        const descendantIds = await getDescendants(tx, dbAgent.id);
+        await tx.agent.update({
+          where: { id: dbAgent.id },
+          data: { status: "REVOKED", revokedAt }
+        });
+        if (descendantIds.length > 0) {
+          await tx.agent.updateMany({
+            where: { id: { in: descendantIds } },
+            data: { status: "REVOKED", revokedAt }
+          });
+        }
+        return descendantIds;
+      });
+
+      await redisPublisher.publish(
+        jobChannel(jobId),
+        JSON.stringify({ type: "AGENT_REVOKED", agentId: dbAgent.id, cascade: descendants })
+      );
+      return;
+    }
+
+    if (onchainStatus !== dbAgent.status) {
+      await prisma.agent.update({
+        where: { id: dbAgent.id },
+        data: { status: onchainStatus }
+      });
+      await redisPublisher.publish(
+        jobChannel(jobId),
+        JSON.stringify({ type: "AGENT_STATUS_CHANGE", agentId: dbAgent.id, status: onchainStatus })
+      );
+    }
+
+    if (onchain.actionCount > dbAgent.actionCount) {
+      await prisma.agent.update({
+        where: { id: dbAgent.id },
+        data: { actionCount: onchain.actionCount }
+      });
+      await redisPublisher.publish(
+        jobChannel(jobId),
+        JSON.stringify({ type: "AGENT_STATUS_CHANGE", agentId: dbAgent.id, status: onchainStatus })
+      );
+    }
+  } catch (error) {
+    logger.error({ err: error, jobId, agentId: agentWallet.agentId }, "agent sync iteration failed");
   }
 }

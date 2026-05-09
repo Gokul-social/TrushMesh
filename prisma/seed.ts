@@ -1,4 +1,5 @@
 import { PrismaClient, AgentStatus, AgentType, JobStatus } from "@prisma/client";
+import { logger } from "../src/lib/logger.js";
 
 const prisma = new PrismaClient();
 
@@ -213,7 +214,7 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (error) => {
-    console.error(error);
+    logger.error({ err: error }, "prisma seed failed");
     await prisma.$disconnect();
     process.exit(1);
   });

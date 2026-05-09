@@ -37,6 +37,7 @@ model Job {
 }
 
 enum JobStatus {
+  PENDING
   ACTIVE
   COMPLETE
   REVOKED

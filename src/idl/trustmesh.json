@@ -1,0 +1,190 @@
+{
+  "address": "66DXeSqBccWxWWw9S21vxe2Mvvqqkmw5KsK5jqA42quz",
+  "metadata": {
+    "name": "trustmesh",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "TrustMesh coordination and audit program"
+  },
+  "instructions": [],
+  "accounts": [
+    {
+      "name": "jobAccount",
+      "discriminator": [91, 16, 162, 5, 45, 210, 125, 65]
+    },
+    {
+      "name": "agentAccount",
+      "discriminator": [241, 119, 69, 140, 233, 9, 112, 50]
+    },
+    {
+      "name": "delegationLogAccount",
+      "discriminator": [156, 250, 94, 171, 74, 115, 117, 79]
+    }
+  ],
+  "types": [
+    {
+      "name": "jobAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "owner", "type": "pubkey" },
+          { "name": "jobId", "type": { "array": ["u8", 32] } },
+          { "name": "descriptionHash", "type": { "array": ["u8", 32] } },
+          { "name": "template", "type": "u8" },
+          { "name": "budgetLamports", "type": "u64" },
+          { "name": "status", "type": "u8" },
+          { "name": "agentCount", "type": "u16" },
+          { "name": "createdAt", "type": "i64" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "agentAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "job", "type": "pubkey" },
+          { "name": "owner", "type": "pubkey" },
+          { "name": "agentWallet", "type": "pubkey" },
+          { "name": "solNameHash", "type": { "array": ["u8", 32] } },
+          { "name": "agentType", "type": "u8" },
+          { "name": "status", "type": "u8" },
+          { "name": "parentAgent", "type": { "option": "pubkey" } },
+          { "name": "actionCount", "type": "u32" },
+          { "name": "spawnedAt", "type": "i64" },
+          { "name": "revokedAt", "type": { "option": "i64" } },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "delegationLogAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "job", "type": "pubkey" },
+          { "name": "senderAgent", "type": "pubkey" },
+          { "name": "receiverAgent", "type": { "option": "pubkey" } },
+          { "name": "actionHash", "type": { "array": ["u8", 32] } },
+          { "name": "signature", "type": { "array": ["u8", 64] } },
+          { "name": "verified", "type": "bool" },
+          { "name": "loggedAt", "type": "i64" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "JobInitialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "jobId", "type": { "array": ["u8", 32] } },
+          { "name": "owner", "type": "pubkey" },
+          { "name": "template", "type": "u8" },
+          { "name": "timestamp", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "AgentSpawned",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "job", "type": "pubkey" },
+          { "name": "agentWallet", "type": "pubkey" },
+          { "name": "solNameHash", "type": { "array": ["u8", 32] } },
+          { "name": "agentType", "type": "u8" },
+          { "name": "parentAgent", "type": { "option": "pubkey" } }
+        ]
+      }
+    },
+    {
+      "name": "DelegationLogged",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "job", "type": "pubkey" },
+          { "name": "sender", "type": "pubkey" },
+          { "name": "receiver", "type": { "option": "pubkey" } },
+          { "name": "actionHash", "type": { "array": ["u8", 32] } },
+          { "name": "verified", "type": "bool" },
+          { "name": "loggedAt", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "AgentRevoked",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "job", "type": "pubkey" },
+          { "name": "agentWallet", "type": "pubkey" },
+          { "name": "revokedAt", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "JobCompleted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "jobId", "type": { "array": ["u8", 32] } },
+          { "name": "owner", "type": "pubkey" }
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "JobInitialized",
+      "discriminator": [120, 208, 215, 227, 49, 22, 150, 100],
+      "fields": [
+        { "name": "jobId", "type": { "array": ["u8", 32] } },
+        { "name": "owner", "type": "pubkey" },
+        { "name": "template", "type": "u8" },
+        { "name": "timestamp", "type": "i64" }
+      ]
+    },
+    {
+      "name": "AgentSpawned",
+      "discriminator": [229, 125, 60, 41, 61, 109, 254, 34],
+      "fields": [
+        { "name": "job", "type": "pubkey" },
+        { "name": "agentWallet", "type": "pubkey" },
+        { "name": "solNameHash", "type": { "array": ["u8", 32] } },
+        { "name": "agentType", "type": "u8" },
+        { "name": "parentAgent", "type": { "option": "pubkey" } }
+      ]
+    },
+    {
+      "name": "DelegationLogged",
+      "discriminator": [48, 132, 186, 149, 118, 99, 176, 179],
+      "fields": [
+        { "name": "job", "type": "pubkey" },
+        { "name": "sender", "type": "pubkey" },
+        { "name": "receiver", "type": { "option": "pubkey" } },
+        { "name": "actionHash", "type": { "array": ["u8", 32] } },
+        { "name": "verified", "type": "bool" },
+        { "name": "loggedAt", "type": "i64" }
+      ]
+    },
+    {
+      "name": "AgentRevoked",
+      "discriminator": [12, 251, 249, 166, 122, 83, 162, 116],
+      "fields": [
+        { "name": "job", "type": "pubkey" },
+        { "name": "agentWallet", "type": "pubkey" },
+        { "name": "revokedAt", "type": "i64" }
+      ]
+    },
+    {
+      "name": "JobCompleted",
+      "discriminator": [176, 207, 246, 115, 95, 179, 9, 132],
+      "fields": [
+        { "name": "jobId", "type": { "array": ["u8", 32] } },
+        { "name": "owner", "type": "pubkey" }
+      ]
+    }
+  ]
+}

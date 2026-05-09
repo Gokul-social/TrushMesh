@@ -1,121 +1,112 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { REDIS_KEYS } from "../lib/constants.js";
 import { ok } from "../lib/envelope.js";
 import { AppError } from "../lib/errors.js";
-import {
-  agentTypeSchema,
-  jobStatusSchema,
-  jobTemplateSchema,
-  paginationQuerySchema,
-  parseWith,
-  solNameSchema,
-  walletAddressSchema
-} from "../lib/schemas.js";
 import { decimal, iso } from "../lib/serialize.js";
+import {
+  activateJobBodySchema,
+  createJobBodySchema,
+  jobStatusSchema,
+  parseWith,
+  subNameSchema,
+  updateJobStatusBodySchema
+} from "../lib/schemas.js";
 import { assertJobOwner } from "../middleware/access.js";
-import { buildGraphSnapshot } from "../services/graph.js";
+import { scheduleAgentSync, cancelAgentSync } from "../queues/agentSync.js";
+import { deriveJobPda, verifyJobInit } from "../services/anchor.js";
+import { resolveNameToWallet, resolveWalletToName, validateSubName } from "../services/sns.js";
 import { publishJobEvent } from "../websocket/broadcast.js";
 
-const listJobsQuerySchema = paginationQuerySchema.extend({
-  status: jobStatusSchema.optional(),
-  ownerWallet: walletAddressSchema.optional()
-});
-
-const createJobBodySchema = z.object({
-  onchainId: z.string().min(3),
-  deployTxHash: z.string().min(8).optional(),
-  description: z.string().trim().min(3).max(1000),
-  template: jobTemplateSchema,
-  budgetSol: z.union([z.string(), z.number()]).transform(String).refine((value) => Number(value) > 0, {
-    message: "Budget must be greater than zero"
-  }),
-  agents: z
-    .array(
-      z.object({
-        solSubName: solNameSchema,
-        type: agentTypeSchema,
-        parentSolSubName: solNameSchema.optional(),
-        spawnTxHash: z.string().min(8)
-      })
-    )
-    .min(1)
-});
-
-const updateStatusBodySchema = z.object({
-  status: jobStatusSchema,
-  txHash: z.string().min(8)
-});
+const paramsSchema = z.object({ id: z.string().min(1) });
 
 export async function registerJobRoutes(app: FastifyInstance) {
   app.addHook("preHandler", app.authenticate);
 
   app.get("/", async (request, reply) => {
-    const query = parseWith(listJobsQuerySchema, request.query);
-    const limit = query.limit ?? 25;
-    if (query.ownerWallet && query.ownerWallet !== request.authUser.walletAddr) {
-      throw new AppError("FORBIDDEN", "Cannot list jobs for another wallet");
-    }
+    const query = parseWith(
+      z.object({
+        status: jobStatusSchema.optional()
+      }),
+      request.query
+    );
 
     const jobs = await app.services.prisma.job.findMany({
       where: {
         ownerId: request.authUser.id,
         ...(query.status ? { status: query.status } : {})
       },
-      take: limit + 1,
-      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      select: {
-        id: true,
-        onchainId: true,
-        description: true,
-        template: true,
-        budgetSol: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        owner: { select: { walletAddr: true, solName: true } },
-        _count: { select: { agents: true, messages: true } }
+      include: {
+        owner: {
+          select: {
+            solName: true
+          }
+        },
+        agents: {
+          select: {
+            status: true
+          }
+        }
       }
     });
 
-    const hasNextPage = jobs.length > limit;
-    const page = hasNextPage ? jobs.slice(0, -1) : jobs;
     return reply.send(
-      ok(page.map(mapJobSummary), {
-        nextCursor: hasNextPage ? page[page.length - 1]?.id : null
+      ok(
+        jobs.map((job) => ({
+          id: job.id,
+          onchainId: job.onchainId,
+          ownerId: job.ownerId,
+          ownerSolName: job.owner.solName,
+          description: job.description,
+          template: job.template,
+          budgetSol: decimal(job.budgetSol),
+          status: job.status,
+          createdAt: iso(job.createdAt),
+          updatedAt: iso(job.updatedAt),
+          agentCount: job.agents.length,
+          activeAgentCount: job.agents.filter((agent) => agent.status === "ACTIVE").length,
+          breachCount: 0
+        }))
+      )
+    );
+  });
+
+  app.get("/validate-sub-name", async (request, reply) => {
+    const query = parseWith(
+      z.object({
+        subName: subNameSchema
+      }),
+      request.query
+    );
+
+    const ownerSolName = await resolveWalletToName(request.authUser.walletAddr);
+    const valid = ownerSolName ? await validateSubName(query.subName, ownerSolName) : false;
+
+    return reply.send(
+      ok({
+        valid,
+        fullName: ownerSolName ? `${query.subName}.${ownerSolName}` : query.subName
       })
     );
   });
 
   app.get("/:id", async (request, reply) => {
-    const params = parseWith(z.object({ id: z.string().min(1) }), request.params);
+    const params = parseWith(paramsSchema, request.params);
     await assertJobOwner(app, params.id, request.authUser.id);
 
-    const job = await app.services.prisma.job.findFirst({
-      where: { id: params.id, ownerId: request.authUser.id },
-      select: {
-        id: true,
-        onchainId: true,
-        description: true,
-        template: true,
-        budgetSol: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        agents: {
-          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    const job = await app.services.prisma.job.findUnique({
+      where: { id: params.id },
+      include: {
+        owner: {
           select: {
-            id: true,
-            solSubName: true,
-            type: true,
-            status: true,
-            parentAgentId: true,
-            actionCount: true,
-            createdAt: true
+            solName: true
           }
         },
-        _count: { select: { messages: true, agents: true } }
+        agents: {
+          select: {
+            status: true
+          }
+        }
       }
     });
 
@@ -125,221 +116,192 @@ export async function registerJobRoutes(app: FastifyInstance) {
 
     return reply.send(
       ok({
-        ...mapJobSummary(job),
-        agents: job.agents.map((agent) => ({
-          ...agent,
-          createdAt: iso(agent.createdAt)
-        })),
-        agentTree: buildAgentTree(job.agents),
-        messageCount: job._count.messages
+        id: job.id,
+        onchainId: job.onchainId,
+        ownerId: job.ownerId,
+        ownerSolName: job.owner.solName,
+        description: job.description,
+        template: job.template,
+        budgetSol: decimal(job.budgetSol),
+        status: job.status,
+        createdAt: iso(job.createdAt),
+        updatedAt: iso(job.updatedAt),
+        agentCount: job.agents.length,
+        activeAgentCount: job.agents.filter((agent) => agent.status === "ACTIVE").length,
+        breachCount: 0
       })
     );
   });
 
   app.post("/", async (request, reply) => {
     const body = parseWith(createJobBodySchema, request.body);
-    validateAgentDefinitions(body.agents);
+    const ownerWallet = request.authUser.walletAddr;
+    const ownerSolName = await resolveWalletToName(ownerWallet);
 
-    const txHash = body.deployTxHash ?? body.onchainId;
-    const verified = await app.services.anchor.verifyDelegationLog(txHash, {
-      jobOnchainId: body.onchainId,
-      agentSolNames: body.agents.map((agent) => agent.solSubName)
-    });
-
-    if (!verified) {
-      throw new AppError("ONCHAIN_MISMATCH", "Onchain delegation log did not match request", {
-        expected: { jobOnchainId: body.onchainId, agentSolNames: body.agents.map((agent) => agent.solSubName) },
-        actual: { txHash }
-      });
+    if (!ownerSolName || !(await validateSubName(body.plannerSubName, ownerSolName))) {
+      return reply.status(400).send({ error: "INVALID_SUB_NAME", field: "plannerSubName" });
     }
 
-    const created = await app.services.prisma.$transaction(async (tx) => {
-      const job = await tx.job.create({
+    for (const executorSubName of body.executorSubNames) {
+      if (!(await validateSubName(executorSubName, ownerSolName))) {
+        return reply.status(400).send({ error: "INVALID_SUB_NAME", field: "executorSubNames" });
+      }
+    }
+
+    if (!ownerSolName) {
+      return reply.status(400).send({ error: "OWNER_SOL_NAME_REQUIRED" });
+    }
+
+    const job = await app.services.prisma.$transaction(async (tx) => {
+      const createdJob = await tx.job.create({
         data: {
           onchainId: body.onchainId,
           ownerId: request.authUser.id,
           description: body.description,
           template: body.template,
-          budgetSol: body.budgetSol
-        },
-        select: {
-          id: true,
-          onchainId: true,
-          description: true,
-          template: true,
-          budgetSol: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true
+          budgetSol: body.budgetSol,
+          status: "PENDING"
         }
       });
 
-      const agentIds = new Map<string, string>();
-      const createdAgents = [];
-      for (const agent of body.agents) {
-        const parentAgentId = agent.parentSolSubName ? agentIds.get(agent.parentSolSubName) : null;
-        if (agent.parentSolSubName && !parentAgentId) {
-          throw new AppError("VALIDATION_ERROR", `Parent ${agent.parentSolSubName} must be declared before child`);
+      const planner = await tx.agent.create({
+        data: {
+          jobId: createdJob.id,
+          ownerId: request.authUser.id,
+          solSubName: `${body.plannerSubName}.${ownerSolName}`,
+          type: "PLANNER",
+          spawnTxHash: `pending-${createdJob.onchainId}-planner`
         }
+      });
 
-        const createdAgent = await tx.agent.create({
-          data: {
-            jobId: job.id,
+      if (body.executorSubNames.length > 0) {
+        await tx.agent.createMany({
+          data: body.executorSubNames.map((executorSubName, index) => ({
+            jobId: createdJob.id,
             ownerId: request.authUser.id,
-            solSubName: agent.solSubName,
-            type: agent.type,
-            parentAgentId,
-            spawnTxHash: agent.spawnTxHash
-          },
-          select: {
-            id: true,
-            jobId: true,
-            solSubName: true,
-            type: true,
-            status: true,
-            parentAgentId: true,
-            actionCount: true,
-            createdAt: true
-          }
+            solSubName: `${executorSubName}.${ownerSolName}`,
+            type: "EXECUTOR",
+            parentAgentId: planner.id,
+            spawnTxHash: `pending-${createdJob.onchainId}-executor-${index + 1}`
+          }))
         });
-        agentIds.set(agent.solSubName, createdAgent.id);
-        createdAgents.push(createdAgent);
       }
 
-      return { job, agents: createdAgents };
+      return createdJob;
     });
-
-    await app.services.redis.del(REDIS_KEYS.statsGlobal);
-    for (const agent of created.agents) {
-      await publishJobEvent(app.services, created.job.id, {
-        type: "AGENT_SPAWNED",
-        agent: { ...agent, createdAt: iso(agent.createdAt) }
-      });
-    }
 
     return reply.status(201).send(
       ok({
-        ...mapJobSummary({ ...created.job, _count: { agents: created.agents.length, messages: 0 } }),
-        agents: created.agents.map((agent) => ({ ...agent, createdAt: iso(agent.createdAt) }))
+        ...job,
+        budgetSol: decimal(job.budgetSol),
+        createdAt: iso(job.createdAt),
+        updatedAt: iso(job.updatedAt)
+      })
+    );
+  });
+
+  app.patch("/:id/activate", async (request, reply) => {
+    const params = parseWith(paramsSchema, request.params);
+    const body = parseWith(activateJobBodySchema, request.body);
+    const job = await app.services.prisma.job.findUnique({
+      where: { id: params.id },
+      include: {
+        agents: {
+          select: {
+            id: true,
+            solSubName: true
+          }
+        }
+      }
+    });
+
+    if (!job) {
+      throw new AppError("NOT_FOUND", "Job not found");
+    }
+
+    if (job.ownerId !== request.authUser.id) {
+      return reply.status(403).send({ error: "FORBIDDEN" });
+    }
+
+    if (job.status !== "PENDING") {
+      return reply.status(409).send({ error: "JOB_ALREADY_ACTIVE" });
+    }
+
+    const onchainMatch = await verifyJobInit(body.initTxHash, job.onchainId);
+    if (!onchainMatch) {
+      return reply.status(422).send({ error: "ONCHAIN_MISMATCH", txHash: body.initTxHash });
+    }
+
+    const updatedJob = await app.services.prisma.job.update({
+      where: { id: job.id },
+      data: { status: "ACTIVE" }
+    });
+
+    const jobPubkey = deriveJobPda(request.authUser.walletAddr, job.onchainId).toBase58();
+    const agentWallets = (
+      await Promise.all(
+        job.agents.map(async (agent) => {
+          try {
+            const wallet = await resolveNameToWallet(agent.solSubName);
+            return {
+              agentId: agent.id,
+              wallet,
+              jobPubkey
+            };
+          } catch {
+            return null;
+          }
+        })
+      )
+    ).filter((entry): entry is { agentId: string; wallet: string; jobPubkey: string } => entry !== null);
+
+    await scheduleAgentSync(job.id, agentWallets);
+    return reply.send(
+      ok({
+        ...updatedJob,
+        budgetSol: decimal(updatedJob.budgetSol),
+        createdAt: iso(updatedJob.createdAt),
+        updatedAt: iso(updatedJob.updatedAt)
       })
     );
   });
 
   app.patch("/:id/status", async (request, reply) => {
-    const params = parseWith(z.object({ id: z.string().min(1) }), request.params);
-    const body = parseWith(updateStatusBodySchema, request.body);
-    const job = await assertJobOwner(app, params.id, request.authUser.id);
-    const verified = await app.services.anchor.verifyDelegationLog(body.txHash, {
-      jobOnchainId: job.onchainId
-    });
-
-    if (!verified) {
-      throw new AppError("ONCHAIN_MISMATCH", "Onchain job status update did not match", {
-        expected: { jobOnchainId: job.onchainId, status: body.status },
-        actual: { txHash: body.txHash }
-      });
-    }
-
-    const updated = await app.services.prisma.job.update({
+    const params = parseWith(paramsSchema, request.params);
+    const body = parseWith(updateJobStatusBodySchema, request.body);
+    const job = await app.services.prisma.job.findUnique({
       where: { id: params.id },
-      data: { status: body.status },
-      select: {
-        id: true,
-        onchainId: true,
-        description: true,
-        template: true,
-        budgetSol: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: { select: { agents: true, messages: true } }
-      }
+      select: { id: true, ownerId: true, status: true }
     });
 
-    await app.services.redis.del(REDIS_KEYS.statsGlobal);
-    if (updated.status === "COMPLETE") {
-      await publishJobEvent(app.services, updated.id, { type: "JOB_COMPLETE", jobId: updated.id });
+    if (!job) {
+      throw new AppError("NOT_FOUND", "Job not found");
     }
 
-    return reply.send(ok(mapJobSummary(updated)));
-  });
-
-  app.get("/:id/snapshot", async (request, reply) => {
-    const params = parseWith(z.object({ id: z.string().min(1) }), request.params);
-    await assertJobOwner(app, params.id, request.authUser.id);
-    return reply.send(ok(await buildGraphSnapshot(app.services.prisma, params.id, request.authUser.id)));
-  });
-}
-
-function mapJobSummary(job: {
-  id: string;
-  onchainId: string;
-  description: string;
-  template: string;
-  budgetSol: { toString(): string };
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
-  owner?: { walletAddr: string; solName: string | null };
-  _count?: { agents: number; messages: number };
-}) {
-  return {
-    id: job.id,
-    onchainId: job.onchainId,
-    description: job.description,
-    template: job.template,
-    budgetSol: decimal(job.budgetSol),
-    status: job.status,
-    createdAt: iso(job.createdAt),
-    updatedAt: iso(job.updatedAt),
-    owner: job.owner,
-    counts: job._count
-  };
-}
-
-function validateAgentDefinitions(agents: Array<{ solSubName: string; parentSolSubName?: string }>) {
-  const names = new Set<string>();
-  for (const agent of agents) {
-    if (names.has(agent.solSubName)) {
-      throw new AppError("VALIDATION_ERROR", `Duplicate agent sub-name: ${agent.solSubName}`);
+    if (job.ownerId !== request.authUser.id) {
+      return reply.status(403).send({ error: "FORBIDDEN" });
     }
-    names.add(agent.solSubName);
-  }
-}
 
-function buildAgentTree(
-  agents: Array<{
-    id: string;
-    solSubName: string;
-    type: string;
-    status: string;
-    parentAgentId: string | null;
-    actionCount: number;
-    createdAt: Date;
-  }>
-) {
-  const nodes = new Map<string, Record<string, unknown> & { children: unknown[] }>();
-  for (const agent of agents) {
-    nodes.set(agent.id, {
-      id: agent.id,
-      solSubName: agent.solSubName,
-      type: agent.type,
-      status: agent.status,
-      actionCount: agent.actionCount,
-      createdAt: iso(agent.createdAt),
-      children: []
+    const updatedJob = await app.services.prisma.job.update({
+      where: { id: params.id },
+      data: { status: body.status }
     });
-  }
 
-  const roots: unknown[] = [];
-  for (const agent of agents) {
-    const node = nodes.get(agent.id)!;
-    const parent = agent.parentAgentId ? nodes.get(agent.parentAgentId) : null;
-    if (parent) {
-      parent.children.push(node);
-    } else {
-      roots.push(node);
+    if (body.status === "COMPLETE" || body.status === "REVOKED") {
+      await cancelAgentSync(job.id);
     }
-  }
-  return roots;
+
+    if (body.status === "COMPLETE") {
+      await publishJobEvent(job.id, { type: "JOB_COMPLETE", jobId: job.id });
+    }
+
+    return reply.send(
+      ok({
+        ...updatedJob,
+        budgetSol: decimal(updatedJob.budgetSol),
+        createdAt: iso(updatedJob.createdAt),
+        updatedAt: iso(updatedJob.updatedAt)
+      })
+    );
+  });
 }

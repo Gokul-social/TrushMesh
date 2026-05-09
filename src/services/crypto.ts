@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import * as ed from "@noble/ed25519";
 import bs58 from "bs58";
 import { PublicKey } from "@solana/web3.js";
 import nacl from "tweetnacl";
@@ -7,23 +8,6 @@ const encoder = new TextEncoder();
 
 export function createNonce() {
   return randomBytes(24).toString("base64url");
-}
-
-export function canonicalAgentMessage(input: {
-  jobId: string;
-  senderSolName: string;
-  receiverSolName: string | null;
-  action: string;
-  txHash: string;
-}) {
-  return [
-    "TrustMesh Agent Message",
-    `Job: ${input.jobId}`,
-    `Sender: ${input.senderSolName}`,
-    `Receiver: ${input.receiverSolName ?? "ONCHAIN"}`,
-    `Action: ${input.action}`,
-    `Tx: ${input.txHash}`
-  ].join("\n");
 }
 
 export function buildSiwsMessage(input: {
@@ -49,7 +33,7 @@ export function buildSiwsMessage(input: {
 }
 
 export function extractSiwsNonce(message: string) {
-  return message.match(/^Nonce:\s*(.+)$/m)?.[1]?.trim() ?? null;
+  return message.match(/^Nonce:\s*(.+)$/mu)?.[1]?.trim() ?? null;
 }
 
 export function verifyWalletSignature(message: string, signature: string, walletAddr: string) {
@@ -58,10 +42,19 @@ export function verifyWalletSignature(message: string, signature: string, wallet
   return nacl.sign.detached.verify(encoder.encode(message), signatureBytes, publicKey.toBytes());
 }
 
-export function verifyAgentMessage(message: string, signatureHex: string, agentWallet: string) {
-  const signatureBytes = hexToBytes(signatureHex);
-  const publicKey = new PublicKey(agentWallet);
-  return nacl.sign.detached.verify(encoder.encode(message), signatureBytes, publicKey.toBytes());
+export async function verifyEd25519Signature(
+  message: string,
+  signatureHex: string,
+  walletAddress: string
+): Promise<boolean> {
+  try {
+    const messageBytes = Buffer.from(message, "utf8");
+    const sigBytes = Buffer.from(signatureHex, "hex");
+    const pubKeyBytes = new PublicKey(walletAddress).toBytes();
+    return await ed.verify(sigBytes, messageBytes, pubKeyBytes);
+  } catch {
+    return false;
+  }
 }
 
 export function bytesToHex(bytes: Uint8Array) {
@@ -72,7 +65,7 @@ export function bytesToHex(bytes: Uint8Array) {
 
 function decodeSignature(signature: string) {
   if (/^[0-9a-fA-F]{128}$/.test(signature)) {
-    return hexToBytes(signature);
+    return Buffer.from(signature, "hex");
   }
 
   try {
@@ -81,7 +74,7 @@ function decodeSignature(signature: string) {
       return decoded;
     }
   } catch {
-    // Try base64 below.
+    // Fall through to base64 handling.
   }
 
   const base64 = Buffer.from(signature, "base64");
@@ -90,15 +83,4 @@ function decodeSignature(signature: string) {
   }
 
   throw new Error("Invalid signature encoding");
-}
-
-function hexToBytes(hex: string) {
-  if (!/^[0-9a-fA-F]{128}$/.test(hex)) {
-    throw new Error("Invalid Ed25519 signature hex");
-  }
-  const bytes = new Uint8Array(64);
-  for (let i = 0; i < 64; i += 1) {
-    bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-  }
-  return bytes;
 }
