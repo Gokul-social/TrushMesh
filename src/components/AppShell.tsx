@@ -244,14 +244,24 @@ export function AppShell() {
         <div className="mt-6 border-t border-white/50 pt-5">
           <Link
             to="/settings"
-            className="flex items-center gap-3 rounded-[18px] px-4 py-3 text-sm text-silk-text-secondary transition hover:text-silk-text-primary hover:shadow-neo"
+            className={cx(
+              "flex items-center gap-3 rounded-[18px] px-4 py-3 text-sm transition hover:text-silk-text-primary hover:shadow-neo",
+              location.pathname === "/settings"
+                ? "neo-inset text-silk-primary"
+                : "text-silk-text-secondary"
+            )}
           >
             <SettingsIcon className="h-5 w-5" />
             <span>Settings</span>
           </Link>
           <Link
             to="/support"
-            className="mt-1 flex items-center gap-3 rounded-[18px] px-4 py-3 text-sm text-silk-text-secondary transition hover:text-silk-text-primary hover:shadow-neo"
+            className={cx(
+              "mt-1 flex items-center gap-3 rounded-[18px] px-4 py-3 text-sm transition hover:text-silk-text-primary hover:shadow-neo",
+              location.pathname === "/support"
+                ? "neo-inset text-silk-primary"
+                : "text-silk-text-secondary"
+            )}
           >
             <SupportIcon className="h-5 w-5" />
             <span>Support</span>

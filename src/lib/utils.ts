@@ -64,17 +64,17 @@ export function formatStatusLabel(status: AgentStatus | JobStatus) {
 export function statusColor(status: AgentStatus | JobStatus) {
   switch (status) {
     case "ACTIVE":
-      return "#6366f1";
+      return "rgb(var(--tm-color-status-active))";
     case "WARNING":
-      return "#f59e0b";
+      return "rgb(var(--tm-color-status-warning))";
     case "REVOKED":
-      return "#ef4444";
+      return "rgb(var(--tm-color-status-revoked))";
     case "COMPLETE":
-      return "#10b981";
+      return "rgb(var(--tm-color-status-complete))";
     case "PENDING":
-      return "#94a3b8";
+      return "rgb(var(--tm-color-text-tertiary))";
     default:
-      return "#64748b";
+      return "rgb(var(--tm-color-text-secondary))";
   }
 }
 

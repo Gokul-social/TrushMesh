@@ -166,7 +166,12 @@ describe("POST /jobs and PATCH /jobs/:id/activate", () => {
           id: "job_1",
           ownerId: testUser.id,
           onchainId: "c".repeat(64),
-          status: "ACTIVE"
+          description: "Create a portfolio rebalancing job",
+          template: "PORTFOLIO_REBALANCER",
+          budgetSol: 1.5,
+          status: "ACTIVE",
+          createdAt: new Date("2026-05-08T00:00:00.000Z"),
+          updatedAt: new Date("2026-05-08T00:00:00.000Z")
         })
       }
     });

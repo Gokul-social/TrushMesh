@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../lib/axios";
 import { runtimeConfig } from "../lib/runtimeConfig";
 import { useAgentStore } from "../stores/agentStore";
+import { useSettingsStore } from "../stores/settingsStore";
 import { statusColor, unwrapEnvelope } from "../lib/utils";
 import type { Agent, ApiEnvelope, Delegation, GraphSnapshot } from "../types";
 import { PersonIcon, RobotIcon } from "./Icons";
@@ -51,6 +52,7 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
   const [renderNodes, setRenderNodes] = useState<SizedNode[]>([]);
   const [renderEdges, setRenderEdges] = useState<SizedEdge[]>([]);
   const [flashAgentIds, setFlashAgentIds] = useState<string[]>([]);
+  const pollingIntervalMs = useSettingsStore((state) => state.pollingIntervalMs);
 
   const liveAgents = useAgentStore((state) => state.agents);
   const lastMessage = useAgentStore((state) => state.lastMessage);
@@ -66,7 +68,7 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
           ).data
         )
       ),
-    refetchInterval: runtimeConfig.enableRealtime ? false : runtimeConfig.pollingIntervalMs
+    refetchInterval: runtimeConfig.enableRealtime ? false : pollingIntervalMs
   });
 
   const setSnapshot = useAgentStore((state) => state.setSnapshot);
@@ -270,12 +272,12 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
                 id={`edge-${edge.id}`}
                 d={path}
                 fill="none"
-                stroke={revoked ? "#ef4444" : "#6366f1"}
+                stroke={revoked ? "rgb(var(--tm-color-status-revoked))" : "rgb(var(--tm-color-primary))"}
                 strokeOpacity={revoked ? 0.15 : 0.35}
                 strokeWidth="1.5"
               />
               {!revoked ? (
-                <circle r="4" fill="#6366f1">
+                <circle r="4" fill="rgb(var(--tm-color-primary))">
                   <animateMotion dur="3s" repeatCount="indefinite" path={path} />
                 </circle>
               ) : null}
@@ -298,11 +300,11 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
               className="cursor-pointer"
               style={{ transformOrigin: `${node.x}px ${node.y}px` }}
             >
-              <circle r="28" fill="#e8eaf0" filter="url(#silkNodeShadow)" />
+              <circle r="28" fill="rgb(var(--tm-color-surface))" filter="url(#silkNodeShadow)" />
               <circle
                 r="28"
                 fill="none"
-                stroke={flashing ? "#ffffff" : tone}
+                stroke={flashing ? "rgb(var(--tm-color-surface-strong))" : tone}
                 strokeWidth="3"
                 opacity={node.status === "ACTIVE" ? 1 : 0.92}
               >

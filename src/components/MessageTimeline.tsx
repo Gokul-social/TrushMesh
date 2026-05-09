@@ -6,6 +6,7 @@ import { apiClient } from "../lib/axios";
 import { runtimeConfig } from "../lib/runtimeConfig";
 import { formatRelativeTime, truncateMiddle, unwrapEnvelope } from "../lib/utils";
 import { useAgentStore } from "../stores/agentStore";
+import { useSettingsStore } from "../stores/settingsStore";
 import type { AgentMessage, ApiEnvelope, MessagePage } from "../types";
 import { CheckIcon, WarningIcon } from "./Icons";
 import { ErrorCard, SkeletonBlock } from "./Feedback";
@@ -30,6 +31,7 @@ export function MessageTimeline({ jobId }: MessageTimelineProps) {
   const realtimeMessages = useAgentStore((state) =>
     state.messages.filter((message) => message.jobId === jobId)
   );
+  const pollingIntervalMs = useSettingsStore((state) => state.pollingIntervalMs);
 
   const messagesQuery = useInfiniteQuery({
     queryKey: ["messages", jobId],
@@ -47,7 +49,7 @@ export function MessageTimeline({ jobId }: MessageTimelineProps) {
         ).data
       ),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    refetchInterval: runtimeConfig.enableRealtime ? false : runtimeConfig.pollingIntervalMs
+    refetchInterval: runtimeConfig.enableRealtime ? false : pollingIntervalMs
   });
 
   const pagedMessages = messagesQuery.data?.pages.flatMap((page) => page.items) ?? [];

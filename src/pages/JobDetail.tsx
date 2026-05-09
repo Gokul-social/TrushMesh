@@ -14,6 +14,7 @@ import {
   unwrapEnvelope
 } from "../lib/utils";
 import { useAgentStore } from "../stores/agentStore";
+import { useSettingsStore } from "../stores/settingsStore";
 import type { Agent, AgentMessage, AgentStatus, ApiEnvelope, GraphSnapshot, Job, MessagePage } from "../types";
 import { DownloadIcon, ListIcon, ShareIcon, VerifiedIcon } from "../components/Icons";
 import { ErrorCard, SkeletonBlock } from "../components/Feedback";
@@ -88,6 +89,7 @@ function nodeEyebrow(node: TreeNodeDatum) {
 function HierarchyTree({ jobId, ownerLabel }: { jobId: string; ownerLabel: string }) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [bounds, setBounds] = useState<TreeBounds>({ width: 920, height: 560 });
+  const pollingIntervalMs = useSettingsStore((state) => state.pollingIntervalMs);
   const liveAgents = useAgentStore((state) =>
     Array.from(state.agents.values()).filter((agent) => agent.jobId === jobId)
   );
@@ -96,7 +98,7 @@ function HierarchyTree({ jobId, ownerLabel }: { jobId: string; ownerLabel: strin
     queryKey: ["graph", jobId],
     queryFn: async () =>
       unwrapEnvelope((await apiClient.get<ApiEnvelope<GraphSnapshot>>(`/graph/${jobId}`)).data),
-    refetchInterval: runtimeConfig.enableRealtime ? false : runtimeConfig.pollingIntervalMs
+    refetchInterval: runtimeConfig.enableRealtime ? false : pollingIntervalMs
   });
 
   useEffect(() => {
@@ -167,7 +169,14 @@ function HierarchyTree({ jobId, ownerLabel }: { jobId: string; ownerLabel: strin
   const offsetY = 96;
 
   return (
-    <div ref={wrapperRef} className="h-full w-full overflow-hidden rounded-[24px] bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.06),transparent_45%),#e8eaf0]">
+    <div
+      ref={wrapperRef}
+      className="h-full w-full overflow-hidden rounded-[24px]"
+      style={{
+        background:
+          "radial-gradient(circle at top, rgb(var(--tm-color-primary) / 0.06), transparent 45%), rgb(var(--tm-color-bg))"
+      }}
+    >
       <svg className="h-full w-full" viewBox={`0 0 ${bounds.width} ${bounds.height}`}>
         <defs>
           <filter id="treeShadow" x="-40%" y="-40%" width="180%" height="180%">
@@ -181,7 +190,7 @@ function HierarchyTree({ jobId, ownerLabel }: { jobId: string; ownerLabel: strin
               key={`${link.source.id}-${link.target.id}`}
               d={`M ${link.source.x} ${link.source.y + nodeCardSize(link.source.data).height / 2} C ${link.source.x} ${(link.source.y + link.target.y) / 2} ${link.target.x} ${(link.source.y + link.target.y) / 2} ${link.target.x} ${link.target.y - nodeCardSize(link.target.data).height / 2}`}
               fill="none"
-              stroke="#c7c7ff"
+              stroke="rgb(var(--tm-color-primary) / 0.28)"
               strokeWidth="2"
               strokeOpacity="0.8"
             />
@@ -191,9 +200,9 @@ function HierarchyTree({ jobId, ownerLabel }: { jobId: string; ownerLabel: strin
             const { width, height } = nodeCardSize(node.data);
             const borderColor =
               node.data.type === "PLANNER"
-                ? "#8b5cf6"
+                ? "rgb(var(--tm-color-secondary))"
                 : node.data.human
-                  ? "#c7d2fe"
+                  ? "rgb(var(--tm-color-primary) / 0.45)"
                   : statusColor(node.data.status);
 
             const accentText = node.data.type === "PLANNER" ? "text-silk-secondary" : "text-silk-primary";
@@ -211,7 +220,7 @@ function HierarchyTree({ jobId, ownerLabel }: { jobId: string; ownerLabel: strin
                   width={width}
                   height={height}
                   rx="22"
-                  fill="#eef2ff"
+                  fill="rgb(var(--tm-color-surface))"
                   filter="url(#treeShadow)"
                 />
                 <rect
@@ -274,6 +283,7 @@ function CoordinationLog({
   const realtimeMessages = useAgentStore((state) =>
     state.messages.filter((message) => message.jobId === jobId)
   );
+  const pollingIntervalMs = useSettingsStore((state) => state.pollingIntervalMs);
 
   const messagesQuery = useQuery({
     queryKey: ["messages-preview", jobId],
@@ -289,7 +299,7 @@ function CoordinationLog({
           })
         ).data
       ),
-    refetchInterval: runtimeConfig.enableRealtime ? false : runtimeConfig.pollingIntervalMs
+    refetchInterval: runtimeConfig.enableRealtime ? false : pollingIntervalMs
   });
 
   const messages = dedupeMessages([...(messagesQuery.data?.items ?? []), ...realtimeMessages])
@@ -384,6 +394,7 @@ export function JobDetail() {
   const { id } = useParams();
   const jobId = id ?? "";
   const [copied, setCopied] = useState(false);
+  const pollingIntervalMs = useSettingsStore((state) => state.pollingIntervalMs);
   useWebSocket({ jobId, enabled: Boolean(jobId) });
 
   const jobQuery = useQuery({
@@ -391,7 +402,7 @@ export function JobDetail() {
     enabled: Boolean(jobId),
     queryFn: async () =>
       unwrapEnvelope((await apiClient.get<ApiEnvelope<Job>>(`/jobs/${jobId}`)).data),
-    refetchInterval: runtimeConfig.enableRealtime ? false : runtimeConfig.pollingIntervalMs
+    refetchInterval: runtimeConfig.enableRealtime ? false : pollingIntervalMs
   });
 
   const exportAuditLog = async () => {

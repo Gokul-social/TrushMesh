@@ -4,6 +4,7 @@ import { Explorer } from "./pages/Explorer";
 import { Deploy } from "./pages/Deploy";
 import { JobDetail } from "./pages/JobDetail";
 import { Landing } from "./pages/Landing";
+import { Settings } from "./pages/Settings";
 
 export function App() {
   return (
@@ -32,7 +33,7 @@ export function App() {
           />
           <Route
             path="/settings"
-            element={<PlaceholderScreen {...shellPageMeta.settings} ctaLabel="Back to Explorer" />}
+            element={<Settings />}
           />
           <Route
             path="/support"
