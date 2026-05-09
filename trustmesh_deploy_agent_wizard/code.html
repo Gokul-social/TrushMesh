@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TrustMesh - Deploy Agent</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#818cf8",
+                        "background": "#e8eaf0",
+                        "surface-container-low": "#e5e7ed",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#6366f1",
+                        "on-tertiary-fixed": "#2e1065",
+                        "outline": "#8a8c9a",
+                        "on-secondary-fixed": "#1a1b26",
+                        "inverse-on-surface": "#e8eaf0",
+                        "on-tertiary-fixed-variant": "#5b21b6",
+                        "on-error": "#ffffff",
+                        "surface": "#e8eaf0",
+                        "on-secondary-container": "#585a68",
+                        "surface-container-highest": "#d6d8de",
+                        "outline-variant": "#d0d2dc",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#dcdee4",
+                        "surface-container-lowest": "#f0f2f8",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#6c6e7e",
+                        "on-primary-fixed-variant": "#4338ca",
+                        "tertiary": "#7c3aed",
+                        "on-error-container": "#991b1b",
+                        "on-surface-variant": "#585a68",
+                        "tertiary-fixed-dim": "#c4b5fd",
+                        "primary-fixed-dim": "#a5b4fc",
+                        "on-surface": "#2e3040",
+                        "surface-variant": "#dcdee4",
+                        "surface-bright": "#edeef4",
+                        "primary": "#6366f1",
+                        "tertiary-fixed": "#ede9fe",
+                        "on-primary-fixed": "#1e1b4b",
+                        "tertiary-container": "#a78bfa",
+                        "surface-dim": "#d4d6dc",
+                        "on-tertiary-container": "#3b1f63",
+                        "on-primary-container": "#e0e2ff",
+                        "error-container": "#fee2e2",
+                        "secondary-container": "#d8dae6",
+                        "secondary-fixed": "#d8dae6",
+                        "inverse-primary": "#a5b4fc",
+                        "error": "#dc2626",
+                        "inverse-surface": "#2e3040",
+                        "secondary-fixed-dim": "#b8baca",
+                        "primary-fixed": "#e0e2ff",
+                        "on-secondary-fixed-variant": "#404252",
+                        "surface-container": "#e2e4ea",
+                        "on-background": "#2e3040"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .neomorph-raised {
+            box-shadow: 6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.6);
+        }
+        .neomorph-inset {
+            box-shadow: inset 4px 4px 8px rgba(0,0,0,0.06), inset -4px -4px 8px rgba(255,255,255,0.5);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface antialiased min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface docked full-width top-0 z-50 shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] flex justify-between items-center px-8 py-4 w-full h-20">
+<div class="text-2xl font-semibold tracking-tight text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-3xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">hub</span>
+            TrustMesh
+        </div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Explorer</a>
+<a class="text-primary font-semibold border-b-2 border-primary pb-1" href="#">Deploy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Docs</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">About</a>
+</nav>
+<div class="flex items-center gap-4">
+<div class="hidden lg:flex items-center neomorph-inset px-4 py-2 rounded-lg">
+<span class="material-symbols-outlined text-primary text-sm mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48" placeholder="Search mesh..." type="text"/>
+</div>
+<button class="neomorph-raised px-6 py-2 rounded-lg text-primary font-semibold active:scale-95 transition-all">
+                mesh.sol
+            </button>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-full w-64 bg-surface sticky top-20 shadow-[6px_0_12px_rgba(0,0,0,0.05)] border-r border-transparent py-6">
+<div class="px-6 mb-8">
+<h2 class="text-xl font-semibold text-primary mb-1">TrustMesh Terminal</h2>
+<p class="text-xs text-on-surface-variant">AI Coordination Node</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 my-1 flex items-center gap-3 transition-all hover:shadow-[4px_4px_8px_rgba(0,0,0,0.04)] rounded-xl" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span>Nodes</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 my-1 flex items-center gap-3 transition-all hover:shadow-[4px_4px_8px_rgba(0,0,0,0.04)] rounded-xl" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span>Active Jobs</span>
+</a>
+<a class="bg-surface shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] text-primary rounded-xl mx-2 my-1 px-4 py-3 flex items-center gap-3 active:scale-[0.98] transition-all" href="#">
+<span class="material-symbols-outlined">rocket_launch</span>
+<span>Deployer</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 my-1 flex items-center gap-3 transition-all hover:shadow-[4px_4px_8px_rgba(0,0,0,0.04)] rounded-xl" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span>Analytics</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-surface-container-high mx-4">
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">help</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto p-8 bg-background">
+<div class="max-w-4xl mx-auto">
+<!-- Wizard Header -->
+<div class="mb-10 text-center">
+<h1 class="text-3xl font-bold text-on-surface mb-2">Deploy Agent</h1>
+<p class="text-on-surface-variant">Initialize a new autonomous coordination mesh on Solana</p>
+</div>
+<!-- Wizard Progress -->
+<div class="flex items-center justify-between mb-12 px-12 relative">
+<div class="absolute top-1/2 left-0 w-full h-1 bg-surface-container-high -translate-y-1/2 z-0 rounded-full"></div>
+<div class="absolute top-1/2 left-0 w-1/2 h-1 bg-primary -translate-y-1/2 z-0 rounded-full transition-all duration-500"></div>
+<!-- Step 1 -->
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center neomorph-raised font-bold">1</div>
+<span class="text-xs mt-2 font-semibold text-primary">Configure</span>
+</div>
+<!-- Step 2 -->
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center neomorph-raised font-bold">2</div>
+<span class="text-xs mt-2 font-semibold text-primary">Identities</span>
+</div>
+<!-- Step 3 -->
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-10 h-10 rounded-full bg-surface text-on-surface-variant flex items-center justify-center neomorph-raised font-bold">3</div>
+<span class="text-xs mt-2 font-medium text-on-surface-variant">Review</span>
+</div>
+</div>
+<!-- Wizard Steps Container -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Left Column: Inputs -->
+<div class="lg:col-span-7 space-y-8">
+<!-- Step 2 Active: Assign .sol Identities -->
+<section class="neomorph-raised rounded-xl p-8 bg-surface space-y-6">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-tertiary">fingerprint</span>
+<h3 class="text-xl font-semibold">Assign .sol Identities</h3>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block text-sm font-medium text-on-surface-variant mb-2">Mesh Owner</label>
+<div class="neomorph-inset p-4 rounded-lg bg-surface flex items-center justify-between opacity-70">
+<span class="font-mono text-primary">mesh.sol</span>
+<span class="material-symbols-outlined text-sm">lock</span>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-on-surface-variant mb-2">Planner Node sub-name</label>
+<div class="flex items-center gap-2">
+<div class="flex-1 neomorph-inset p-3 rounded-lg bg-surface">
+<input class="w-full bg-transparent border-none focus:ring-0 text-sm" placeholder="e.g. strategist" type="text" value="alpha-planner"/>
+</div>
+<span class="text-on-surface-variant font-mono">.mesh.sol</span>
+</div>
+<p class="text-[10px] mt-1 text-on-surface-variant ml-1 italic">This identity coordinates sub-tasks and assigns workloads.</p>
+</div>
+<div>
+<label class="block text-sm font-medium text-on-surface-variant mb-2">Executor Node sub-name(s)</label>
+<div class="space-y-3">
+<div class="flex items-center gap-2">
+<div class="flex-1 neomorph-inset p-3 rounded-lg bg-surface">
+<input class="w-full bg-transparent border-none focus:ring-0 text-sm" placeholder="e.g. worker-1" type="text" value="exec-bot-1"/>
+</div>
+<span class="text-on-surface-variant font-mono">.mesh.sol</span>
+<button class="text-error opacity-50 hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<button class="flex items-center gap-2 text-primary text-sm font-medium mt-2 hover:underline">
+<span class="material-symbols-outlined text-sm">add_circle</span>
+                                            Add Another Executor
+                                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Step Navigation -->
+<div class="flex items-center justify-between">
+<button class="neomorph-raised px-8 py-3 rounded-xl font-medium text-on-surface-variant flex items-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined">arrow_back</span>
+                                Back
+                            </button>
+<button class="neomorph-raised px-10 py-3 rounded-xl font-bold bg-primary text-on-primary flex items-center gap-2 active:scale-95 transition-all">
+                                Next Step
+                                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Right Column: Live Preview / Tree -->
+<div class="lg:col-span-5">
+<div class="neomorph-raised rounded-xl p-6 bg-surface sticky top-28">
+<div class="flex items-center justify-between mb-6">
+<h4 class="font-semibold text-on-surface-variant uppercase text-xs tracking-wider">Agent Tree Preview</h4>
+<span class="bg-primary/10 text-primary text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-tighter">Live</span>
+</div>
+<div class="flex flex-col items-center">
+<!-- Owner Node -->
+<div class="neomorph-raised p-4 rounded-xl border-2 border-primary/20 flex flex-col items-center w-40 mb-8 relative">
+<div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-primary" data-weight="fill" style="font-variation-settings: 'FILL' 1;">person</span>
+</div>
+<span class="text-xs font-bold font-mono">mesh.sol</span>
+<span class="text-[10px] text-on-surface-variant">Owner</span>
+<!-- Connector line -->
+<div class="absolute top-full left-1/2 -translate-x-1/2 w-0.5 h-8 bg-surface-container-highest"></div>
+</div>
+<!-- Planner Node -->
+<div class="neomorph-raised p-4 rounded-xl border-2 border-tertiary/20 flex flex-col items-center w-48 mb-8 relative">
+<div class="w-10 h-10 bg-tertiary/10 rounded-full flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-tertiary" data-weight="fill" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+</div>
+<span class="text-xs font-bold font-mono text-center truncate w-full">alpha-planner.mesh.sol</span>
+<span class="text-[10px] text-on-surface-variant">Planner Node</span>
+<!-- Connector lines to children -->
+<div class="absolute top-full left-1/2 -translate-x-1/2 w-0.5 h-4 bg-surface-container-highest"></div>
+<div class="absolute top-[calc(100%+1rem)] left-1/2 -translate-x-1/2 w-24 h-0.5 bg-surface-container-highest"></div>
+<div class="absolute top-[calc(100%+1rem)] left-[calc(50%-3rem)] w-0.5 h-4 bg-surface-container-highest"></div>
+</div>
+<!-- Executor Nodes -->
+<div class="flex gap-4">
+<div class="neomorph-raised p-3 rounded-lg border border-surface-container-highest flex flex-col items-center w-32">
+<div class="w-8 h-8 bg-surface-container-low rounded-full flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-sm text-on-surface-variant">precision_manufacturing</span>
+</div>
+<span class="text-[10px] font-mono font-semibold truncate w-full text-center">exec-bot-1...</span>
+<span class="text-[9px] text-on-surface-variant">Executor</span>
+</div>
+<div class="neomorph-inset p-3 rounded-lg border border-dashed border-outline-variant flex flex-col items-center justify-center w-32 opacity-40">
+<span class="material-symbols-outlined text-lg mb-1">add</span>
+<span class="text-[9px] font-semibold">PENDING</span>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-surface-container-high">
+<div class="flex items-center justify-between text-xs mb-2">
+<span class="text-on-surface-variant">Estimated Rent (SOL)</span>
+<span class="font-mono font-bold">~0.0125</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-on-surface-variant">Identity Registration</span>
+<span class="font-mono font-bold">~0.0050</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Navigation (Bottom Bar) -->
+<footer class="md:hidden bg-surface flex justify-around items-center h-16 shadow-[0_-6px_12px_rgba(0,0,0,0.08)] z-50">
+<a class="flex flex-col items-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span class="text-[10px]">Nodes</span>
+</a>
+<a class="flex flex-col items-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span class="text-[10px]">Jobs</span>
+</a>
+<a class="flex flex-col items-center text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+<span class="text-[10px] font-bold">Deploy</span>
+</a>
+<a class="flex flex-col items-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="text-[10px]">Stats</span>
+</a>
+</footer>
+<!-- Potential Success Overlay (Hidden by Default, for illustrative purpose of wizard flow) -->
+<div class="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 pointer-events-none opacity-0">
+<div class="max-w-md w-full neomorph-raised bg-surface rounded-2xl p-10 text-center transform scale-90">
+<div class="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
+<span class="material-symbols-outlined text-5xl text-primary" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<h2 class="text-2xl font-bold mb-2">Deployment Successful!</h2>
+<p class="text-on-surface-variant mb-8 text-sm">Your Agent Mesh is now live on Solana mainnet. Monitoring has been initialized.</p>
+<div class="flex flex-col gap-3">
+<button class="neomorph-raised w-full py-3 rounded-xl bg-primary text-on-primary font-bold">
+                    Go to Dashboard
+                </button>
+<a class="flex items-center justify-center gap-2 text-primary font-semibold text-sm py-2" href="#">
+                    View on Solana Explorer
+                    <span class="material-symbols-outlined text-sm">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+</body></html>

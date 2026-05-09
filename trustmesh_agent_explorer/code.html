@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#818cf8",
+                        "background": "#e8eaf0",
+                        "surface-container-low": "#e5e7ed",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#6366f1",
+                        "on-tertiary-fixed": "#2e1065",
+                        "outline": "#8a8c9a",
+                        "on-secondary-fixed": "#1a1b26",
+                        "inverse-on-surface": "#e8eaf0",
+                        "on-tertiary-fixed-variant": "#5b21b6",
+                        "on-error": "#ffffff",
+                        "surface": "#e8eaf0",
+                        "on-secondary-container": "#585a68",
+                        "surface-container-highest": "#d6d8de",
+                        "outline-variant": "#d0d2dc",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#dcdee4",
+                        "surface-container-lowest": "#f0f2f8",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#6c6e7e",
+                        "on-primary-fixed-variant": "#4338ca",
+                        "tertiary": "#7c3aed",
+                        "on-error-container": "#991b1b",
+                        "on-surface-variant": "#585a68",
+                        "tertiary-fixed-dim": "#c4b5fd",
+                        "primary-fixed-dim": "#a5b4fc",
+                        "on-surface": "#2e3040",
+                        "surface-variant": "#dcdee4",
+                        "surface-bright": "#edeef4",
+                        "primary": "#6366f1",
+                        "tertiary-fixed": "#ede9fe",
+                        "on-primary-fixed": "#1e1b4b",
+                        "tertiary-container": "#a78bfa",
+                        "surface-dim": "#d4d6dc",
+                        "on-tertiary-container": "#3b1f63",
+                        "on-primary-container": "#e0e2ff",
+                        "error-container": "#fee2e2",
+                        "secondary-container": "#d8dae6",
+                        "secondary-fixed": "#d8dae6",
+                        "inverse-primary": "#a5b4fc",
+                        "error": "#dc2626",
+                        "inverse-surface": "#2e3040",
+                        "secondary-fixed-dim": "#b8baca",
+                        "primary-fixed": "#e0e2ff",
+                        "on-secondary-fixed-variant": "#404252",
+                        "surface-container": "#e2e4ea",
+                        "on-background": "#2e3040"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #e8eaf0; color: #2e3040; overflow: hidden; }
+        .neomorphic-raised { box-shadow: 6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.6); }
+        .neomorphic-inset { box-shadow: inset 4px 4px 8px rgba(0,0,0,0.06), inset -4px -4px 8px rgba(255,255,255,0.5); }
+        .node-glow-violet { box-shadow: 0 0 15px rgba(124, 58, 237, 0.5); }
+        .node-glow-amber { box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
+        .node-glow-red { box-shadow: 0 0 15px rgba(220, 38, 38, 0.5); }
+        .node-glow-green { box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
+        .edge-line { stroke-dasharray: 8; animation: dash 20s linear infinite; }
+        @keyframes dash { to { stroke-dashoffset: -1000; } }
+    </style>
+</head>
+<body class="flex h-screen w-screen bg-surface overflow-hidden">
+<!-- Shared SideNavBar -->
+<aside class="h-screen w-64 bg-surface flex flex-col py-6 border-r border-transparent sticky left-0 z-40 shadow-[6px_0_12px_rgba(0,0,0,0.05)] dark:shadow-none">
+<div class="px-6 mb-8">
+<h1 class="text-xl font-semibold text-primary mb-1">TrustMesh Terminal</h1>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold opacity-70">AI Coordination Node</p>
+</div>
+<nav class="flex-1 px-2 space-y-1">
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 my-1 flex items-center gap-3 transition-all hover:shadow-[4px_4px_8px_rgba(0,0,0,0.04)] rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span class="font-medium text-sm">Nodes</span>
+</a>
+<a class="bg-surface shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] text-primary rounded-xl mx-2 my-1 px-4 py-3 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="font-medium text-sm">Active Jobs</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 my-1 flex items-center gap-3 transition-all hover:shadow-[4px_4px_8px_rgba(0,0,0,0.04)] rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+<span class="font-medium text-sm">Deployer</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 my-1 flex items-center gap-3 transition-all hover:shadow-[4px_4px_8px_rgba(0,0,0,0.04)] rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-medium text-sm">Analytics</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-1">
+<button class="w-full mb-6 neomorphic-raised py-3 rounded-xl flex items-center justify-center gap-2 text-primary font-semibold active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+<span class="text-sm">New Deployment</span>
+</button>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-2 mx-2 flex items-center gap-3 transition-all rounded-xl text-sm" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-2 mx-2 flex items-center gap-3 transition-all rounded-xl text-sm" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="help">help</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- Page Layout: Left Job List + Main Canvas -->
+<main class="flex-1 flex overflow-hidden">
+<!-- Job Sidebar (240px) -->
+<section class="w-[320px] bg-surface flex flex-col h-full border-r border-surface-container-highest/30 z-30">
+<div class="p-6">
+<h2 class="text-lg font-semibold mb-4 text-on-surface">Active Jobs</h2>
+<!-- Filter Tabs -->
+<div class="flex p-1 bg-surface neomorphic-inset rounded-xl mb-6">
+<button class="flex-1 py-1.5 text-xs font-semibold rounded-lg bg-surface neomorphic-raised text-primary">All</button>
+<button class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-on-surface-variant">Active</button>
+<button class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-on-surface-variant">Revoked</button>
+</div>
+<button class="w-full py-4 px-4 neomorphic-raised rounded-xl flex items-center justify-between mb-6 group active:scale-[0.98] transition-all">
+<span class="font-semibold text-sm text-on-surface">New Job</span>
+<div class="neomorphic-inset p-1 rounded-lg text-primary">
+<span class="material-symbols-outlined text-lg" data-icon="add">add</span>
+</div>
+</button>
+<!-- Job List -->
+<div class="space-y-4 overflow-y-auto max-h-[calc(100vh-280px)] pr-2 custom-scrollbar">
+<!-- Job Card 1 -->
+<div class="p-4 neomorphic-raised rounded-xl border border-transparent hover:border-primary/20 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] font-mono text-on-surface-variant">0x7f2...a90b</span>
+<span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-tertiary/10 text-tertiary">Active</span>
+</div>
+<p class="font-semibold text-sm text-on-surface mb-1">alpha.mesh.sol</p>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-xs" data-icon="schedule">schedule</span>
+<span class="text-[10px]">2m ago</span>
+</div>
+</div>
+<!-- Job Card 2 -->
+<div class="p-4 neomorphic-inset rounded-xl bg-surface/50 opacity-80">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] font-mono text-on-surface-variant">0x3e1...c44d</span>
+<span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-error/10 text-error">Revoked</span>
+</div>
+<p class="font-semibold text-sm text-on-surface mb-1">beta.mesh.sol</p>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-xs" data-icon="schedule">schedule</span>
+<span class="text-[10px]">45m ago</span>
+</div>
+</div>
+<!-- Job Card 3 -->
+<div class="p-4 neomorphic-raised rounded-xl border border-transparent hover:border-primary/20 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] font-mono text-on-surface-variant">0x9a8...e11f</span>
+<span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-primary/10 text-primary">Completed</span>
+</div>
+<p class="font-semibold text-sm text-on-surface mb-1">zeta.mesh.sol</p>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-xs" data-icon="schedule">schedule</span>
+<span class="text-[10px]">1h ago</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Canvas Area -->
+<section class="flex-1 relative bg-surface overflow-hidden">
+<!-- Force Directed Graph Emulation -->
+<div class="absolute inset-0 flex items-center justify-center p-12">
+<svg class="w-full h-full" height="100%" viewbox="0 0 1000 800" width="100%">
+<!-- Connections -->
+<line class="edge-line opacity-30" stroke="#8a8c9a" stroke-width="1" x1="500" x2="300" y1="400" y2="250"></line>
+<line class="edge-line opacity-30" stroke="#8a8c9a" stroke-width="1" x1="500" x2="700" y1="400" y2="250"></line>
+<line class="edge-line opacity-30" stroke="#8a8c9a" stroke-width="1" x1="500" x2="500" y1="400" y2="650"></line>
+<line class="edge-line opacity-30" stroke="#8a8c9a" stroke-width="1" x1="300" x2="150" y1="250" y2="350"></line>
+<line class="edge-line opacity-30" stroke="#8a8c9a" stroke-width="1" x1="700" x2="850" y1="250" y2="350"></line>
+<!-- Node Core (Center) -->
+<g transform="translate(500, 400)">
+<circle class="neomorphic-raised transition-transform hover:scale-105 cursor-pointer shadow-xl" fill="#e8eaf0" r="45"></circle>
+<circle class="node-glow-violet animate-pulse" fill="none" r="45" stroke="#7c3aed" stroke-width="3"></circle>
+<foreignobject height="40" width="40" x="-20" y="-20">
+<div class="flex items-center justify-center h-full w-full">
+<span class="material-symbols-outlined text-tertiary text-3xl" data-icon="smart_toy">smart_toy</span>
+</div>
+</foreignobject>
+<text class="fill-on-surface font-semibold text-sm" text-anchor="middle" y="65">main.mesh.sol</text>
+</g>
+<!-- Node 2 (Warning) -->
+<g transform="translate(300, 250)">
+<circle class="neomorphic-raised transition-transform hover:scale-105 cursor-pointer" fill="#e8eaf0" r="35"></circle>
+<circle class="node-glow-amber" fill="none" r="35" stroke="#f59e0b" stroke-width="2"></circle>
+<foreignobject height="30" width="30" x="-15" y="-15">
+<div class="flex items-center justify-center h-full w-full">
+<span class="material-symbols-outlined text-amber-500 text-xl" data-icon="robot_2">robot_2</span>
+</div>
+</foreignobject>
+<text class="fill-on-surface-variant font-medium text-xs" text-anchor="middle" y="55">scout_01.sol</text>
+</g>
+<!-- Node 3 (Completed) -->
+<g transform="translate(700, 250)">
+<circle class="neomorphic-raised transition-transform hover:scale-105 cursor-pointer" fill="#e8eaf0" r="35"></circle>
+<circle class="node-glow-green" fill="none" r="35" stroke="#10b981" stroke-width="2"></circle>
+<foreignobject height="30" width="30" x="-15" y="-15">
+<div class="flex items-center justify-center h-full w-full">
+<span class="material-symbols-outlined text-emerald-500 text-xl" data-icon="precision_manufacturing">precision_manufacturing</span>
+</div>
+</foreignobject>
+<text class="fill-on-surface-variant font-medium text-xs" text-anchor="middle" y="55">worker_09.sol</text>
+</g>
+<!-- Node 4 (Revoked) -->
+<g transform="translate(500, 650)">
+<circle class="neomorphic-raised transition-transform hover:scale-105 cursor-pointer" fill="#e8eaf0" r="35"></circle>
+<circle class="node-glow-red" fill="none" r="35" stroke="#dc2626" stroke-width="2"></circle>
+<foreignobject height="30" width="30" x="-15" y="-15">
+<div class="flex items-center justify-center h-full w-full">
+<span class="material-symbols-outlined text-error text-xl" data-icon="no_accounts">no_accounts</span>
+</div>
+</foreignobject>
+<text class="fill-on-surface-variant font-medium text-xs" text-anchor="middle" y="55">failed_node.sol</text>
+</g>
+</svg>
+</div>
+<!-- Canvas Overlay UI -->
+<div class="absolute top-6 left-6 flex gap-4">
+<div class="neomorphic-raised bg-surface rounded-full px-4 py-2 flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></div>
+<span class="text-xs font-semibold text-on-surface">Mesh Pulse: Stable (124ms)</span>
+</div>
+</div>
+<div class="absolute bottom-6 left-6 flex gap-3">
+<button class="p-3 neomorphic-raised rounded-xl text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined" data-icon="zoom_in">zoom_in</span>
+</button>
+<button class="p-3 neomorphic-raised rounded-xl text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined" data-icon="zoom_out">zoom_out</span>
+</button>
+<button class="p-3 neomorphic-raised rounded-xl text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined" data-icon="filter_center_focus">filter_center_focus</span>
+</button>
+</div>
+</section>
+<!-- Node Detail Panel (Slides from Right) -->
+<section class="w-[360px] bg-surface-container-low h-full neomorphic-raised z-40 border-l border-white/40 flex flex-col">
+<div class="p-8 h-full flex flex-col overflow-y-auto">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-xl font-semibold text-on-surface">Agent Details</h3>
+<button class="p-2 neomorphic-raised rounded-lg text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Agent Identity Card -->
+<div class="neomorphic-raised bg-surface rounded-2xl p-6 mb-8 text-center">
+<div class="w-24 h-24 mx-auto mb-4 relative">
+<div class="absolute inset-0 neomorphic-inset rounded-full"></div>
+<div class="absolute inset-2 bg-surface neomorphic-raised rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-5xl" data-icon="smart_toy">smart_toy</span>
+</div>
+<div class="absolute bottom-0 right-0 w-6 h-6 bg-tertiary border-4 border-surface rounded-full"></div>
+</div>
+<h4 class="text-lg font-bold text-on-surface">main.mesh.sol</h4>
+<p class="text-sm text-on-surface-variant font-mono">Agent ID: 8829-XJ-01</p>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-2 gap-4 mb-8">
+<div class="p-4 neomorphic-inset rounded-xl">
+<p class="text-[10px] text-on-surface-variant uppercase font-bold mb-1">Parent</p>
+<p class="text-sm font-semibold text-on-surface">Root Mesh</p>
+</div>
+<div class="p-4 neomorphic-inset rounded-xl">
+<p class="text-[10px] text-on-surface-variant uppercase font-bold mb-1">Uptime</p>
+<p class="text-sm font-semibold text-on-surface">12d 4h 12m</p>
+</div>
+</div>
+<!-- Action Log Timeline -->
+<div class="flex-1 overflow-hidden flex flex-col">
+<h5 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Action Log</h5>
+<div class="flex-1 overflow-y-auto space-y-6 pr-4">
+<div class="relative pl-8 border-l-2 border-surface-container-highest ml-2">
+<div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-tertiary border-4 border-surface"></div>
+<p class="text-xs font-bold text-on-surface">Allocated Sub-Task J-992</p>
+<p class="text-[10px] text-on-surface-variant mb-2">2 minutes ago</p>
+<div class="neomorphic-inset p-3 rounded-lg text-[11px] text-on-surface-variant italic">
+                                "Routing computational resources to shard 01x..."
+                            </div>
+</div>
+<div class="relative pl-8 border-l-2 border-surface-container-highest ml-2">
+<div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-outline-variant border-4 border-surface"></div>
+<p class="text-xs font-bold text-on-surface">Heartbeat Synchronized</p>
+<p class="text-[10px] text-on-surface-variant">14 minutes ago</p>
+</div>
+<div class="relative pl-8 border-l-2 border-surface-container-highest ml-2">
+<div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary border-4 border-surface"></div>
+<p class="text-xs font-bold text-on-surface">Spawned scout_01.sol</p>
+<p class="text-[10px] text-on-surface-variant">1 hour ago</p>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="pt-8 mt-auto">
+<button class="w-full py-4 bg-error-container text-error rounded-xl font-bold flex items-center justify-center gap-2 neomorphic-raised active:scale-[0.98] transition-all hover:bg-error hover:text-white transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="gavel">gavel</span>
+<span>Revoke Agent</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Contextual FAB (Suppressed on Details as per rules, but showing for Dashboard relevance if desired - however instruction says suppress on Details) -->
+<!-- Not rendering FAB here to prioritize the clear canvas and sidebar controls -->
+</body></html>

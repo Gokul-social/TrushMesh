@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TrustMesh Terminal - Job Detail #A7F3</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#818cf8",
+                        "background": "#e8eaf0",
+                        "surface-container-low": "#e5e7ed",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#6366f1",
+                        "on-tertiary-fixed": "#2e1065",
+                        "outline": "#8a8c9a",
+                        "on-secondary-fixed": "#1a1b26",
+                        "inverse-on-surface": "#e8eaf0",
+                        "on-tertiary-fixed-variant": "#5b21b6",
+                        "on-error": "#ffffff",
+                        "surface": "#e8eaf0",
+                        "on-secondary-container": "#585a68",
+                        "surface-container-highest": "#d6d8de",
+                        "outline-variant": "#d0d2dc",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#dcdee4",
+                        "surface-container-lowest": "#f0f2f8",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#6c6e7e",
+                        "on-primary-fixed-variant": "#4338ca",
+                        "tertiary": "#7c3aed",
+                        "on-error-container": "#991b1b",
+                        "on-surface-variant": "#585a68",
+                        "tertiary-fixed-dim": "#c4b5fd",
+                        "primary-fixed-dim": "#a5b4fc",
+                        "on-surface": "#2e3040",
+                        "surface-variant": "#dcdee4",
+                        "surface-bright": "#edeef4",
+                        "primary": "#6366f1",
+                        "tertiary-fixed": "#ede9fe",
+                        "on-primary-fixed": "#1e1b4b",
+                        "tertiary-container": "#a78bfa",
+                        "surface-dim": "#d4d6dc",
+                        "on-tertiary-container": "#3b1f63",
+                        "on-primary-container": "#e0e2ff",
+                        "error-container": "#fee2e2",
+                        "secondary-container": "#d8dae6",
+                        "secondary-fixed": "#d8dae6",
+                        "inverse-primary": "#a5b4fc",
+                        "error": "#dc2626",
+                        "inverse-surface": "#2e3040",
+                        "secondary-fixed-dim": "#b8baca",
+                        "primary-fixed": "#e0e2ff",
+                        "on-secondary-fixed-variant": "#404252",
+                        "surface-container": "#e2e4ea",
+                        "on-background": "#2e3040"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .neomorphic-raised {
+            box-shadow: 6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.6);
+        }
+        .neomorphic-inset {
+            box-shadow: inset 4px 4px 8px rgba(0,0,0,0.06), inset -4px -4px 8px rgba(255,255,255,0.5);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #e8eaf0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="antialiased text-on-surface">
+<div class="flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 sticky top-0 flex flex-col py-6 bg-surface shadow-[6px_0_12px_rgba(0,0,0,0.05)] z-40">
+<div class="px-6 mb-8">
+<div class="text-xl font-semibold text-primary mb-1">TrustMesh Terminal</div>
+<div class="text-xs text-on-surface-variant font-medium">AI Coordination Node</div>
+</div>
+<div class="flex-grow space-y-1">
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 my-1 flex items-center gap-3 transition-all rounded-xl hover:shadow-[4px_4px_8px_rgba(0,0,0,0.04)]" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span class="font-medium text-sm">Nodes</span>
+</a>
+<!-- Active State: Active Jobs -->
+<a class="bg-surface shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] text-primary rounded-xl mx-2 my-1 px-4 py-3 flex items-center gap-3 active:scale-[0.98] transition-all" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-medium text-sm">Active Jobs</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 my-1 flex items-center gap-3 transition-all rounded-xl hover:shadow-[4px_4px_8px_rgba(0,0,0,0.04)]" href="#">
+<span class="material-symbols-outlined">rocket_launch</span>
+<span class="font-medium text-sm">Deployer</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 my-1 flex items-center gap-3 transition-all rounded-xl hover:shadow-[4px_4px_8px_rgba(0,0,0,0.04)]" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="font-medium text-sm">Analytics</span>
+</a>
+</div>
+<div class="px-4 py-4 mb-4">
+<button class="w-full neomorphic-raised py-3 px-4 rounded-xl text-primary font-semibold text-sm active:scale-95 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                    New Deployment
+                </button>
+</div>
+<div class="border-t border-surface-container-highest/30 pt-4 mt-auto">
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-2 mx-2 flex items-center gap-3 transition-all rounded-xl" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium text-sm">Settings</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-2 mx-2 flex items-center gap-3 transition-all rounded-xl" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-medium text-sm">Support</span>
+</a>
+</div>
+</aside>
+<main class="flex-grow flex flex-col min-w-0">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center px-8 py-4 w-full h-20 bg-surface shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] z-30">
+<div class="flex items-center gap-8">
+<div class="text-2xl font-semibold tracking-tight text-primary flex items-center gap-2">
+                        TrustMesh
+                    </div>
+<nav class="hidden md:flex gap-6">
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200 text-sm font-medium" href="#">Explorer</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200 text-sm font-medium" href="#">Deploy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200 text-sm font-medium" href="#">Docs</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200 text-sm font-medium" href="#">About</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="neomorphic-inset px-4 py-2 rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-on-surface-variant">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm p-0 w-32 lg:w-48 placeholder-on-surface-variant/50" placeholder="Search hash..." type="text"/>
+</div>
+<button class="neomorphic-raised px-4 py-2 rounded-lg text-primary font-semibold text-sm active:scale-95 transition-transform">mesh.sol</button>
+<button class="bg-primary text-on-primary shadow-lg shadow-primary/20 px-4 py-2 rounded-lg font-semibold text-sm active:scale-95 transition-transform">Connect Wallet</button>
+</div>
+</header>
+<!-- Content Area -->
+<div class="p-8 flex-grow space-y-8">
+<!-- Header Info -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+<div>
+<div class="flex items-center gap-3 mb-1">
+<span class="text-on-surface-variant font-medium">Job ID</span>
+<span class="text-2xl font-semibold text-on-surface">#A7F3-D92B-9104</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1.5 neomorphic-inset px-3 py-1 rounded-full text-xs font-semibold text-on-tertiary-fixed-variant">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">person</span>
+                                mesh.sol
+                            </div>
+<div class="flex items-center gap-1.5 bg-primary/10 px-3 py-1 rounded-full text-xs font-semibold text-primary">
+<span class="material-symbols-outlined text-xs animate-pulse" style="font-variation-settings: 'FILL' 1;">radio_button_checked</span>
+                                Active
+                            </div>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="neomorphic-raised p-4 rounded-xl flex flex-col items-center min-w-[120px]">
+<span class="text-xs text-on-surface-variant uppercase tracking-wider mb-1">Duration</span>
+<span class="text-lg font-semibold text-on-surface">14m 22s</span>
+</div>
+<div class="neomorphic-raised p-4 rounded-xl flex flex-col items-center min-w-[120px]">
+<span class="text-xs text-on-surface-variant uppercase tracking-wider mb-1">Nodes Active</span>
+<span class="text-lg font-semibold text-primary">05 / 05</span>
+</div>
+</div>
+</div>
+<!-- Bento Grid for Core Content -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Left: Decision Tree Visualization -->
+<div class="lg:col-span-2 space-y-6">
+<div class="neomorphic-raised p-8 rounded-2xl min-h-[500px] relative overflow-hidden flex flex-col">
+<div class="flex justify-between items-center mb-12">
+<h3 class="font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary">account_tree</span>
+                                    Decision Tree Visualization
+                                </h3>
+<div class="flex gap-2">
+<button class="neomorphic-inset p-2 rounded-lg"><span class="material-symbols-outlined text-sm">zoom_in</span></button>
+<button class="neomorphic-inset p-2 rounded-lg"><span class="material-symbols-outlined text-sm">zoom_out</span></button>
+</div>
+</div>
+<div class="flex-grow flex flex-col items-center justify-start gap-16 relative">
+<!-- Root Node -->
+<div class="relative z-10">
+<div class="neomorphic-raised bg-surface w-48 p-4 rounded-xl text-center border-t-2 border-primary/20">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mb-2">Human Intent</div>
+<div class="font-semibold text-on-surface">mesh.sol</div>
+</div>
+<div class="absolute top-full left-1/2 -translate-x-1/2 h-16 w-0.5 bg-gradient-to-b from-primary/40 to-tertiary/40"></div>
+</div>
+<!-- Level 1: Planner -->
+<div class="relative z-10">
+<div class="neomorphic-raised bg-surface-container-high w-56 p-5 rounded-xl text-center ring-2 ring-tertiary shadow-[0_0_20px_rgba(124,58,237,0.1)]">
+<div class="text-[10px] text-tertiary font-bold uppercase tracking-widest mb-2">Lead Planner</div>
+<div class="font-semibold text-on-surface">Strategic-Agent-01</div>
+<div class="mt-2 text-[10px] text-on-surface-variant">Allocating resources for task sequence...</div>
+</div>
+<!-- Dynamic Branching lines -->
+<div class="absolute top-full left-1/2 -translate-x-1/2 h-8 w-0.5 bg-tertiary/30"></div>
+<div class="absolute top-[calc(100%+2rem)] left-1/2 -translate-x-1/2 w-[400px] h-0.5 bg-tertiary/30"></div>
+<div class="absolute top-[calc(100%+2rem)] left-[calc(50%-200px)] h-8 w-0.5 bg-tertiary/30"></div>
+<div class="absolute top-[calc(100%+2rem)] left-[calc(50%+200px)] h-8 w-0.5 bg-tertiary/30"></div>
+<div class="absolute top-[calc(100%+2rem)] left-1/2 -translate-x-1/2 h-8 w-0.5 bg-tertiary/30"></div>
+</div>
+<!-- Level 2: Executors -->
+<div class="flex justify-between w-full max-w-[600px] relative z-10">
+<div class="neomorphic-raised bg-surface w-40 p-4 rounded-xl text-center">
+<div class="text-[9px] text-on-surface-variant font-bold uppercase mb-1">Executor A</div>
+<div class="text-sm font-semibold text-on-surface">Data Fetcher</div>
+<div class="mt-2 flex justify-center"><span class="material-symbols-outlined text-green-500 text-sm">check_circle</span></div>
+</div>
+<div class="neomorphic-raised bg-surface w-40 p-4 rounded-xl text-center ring-1 ring-primary/40">
+<div class="text-[9px] text-on-surface-variant font-bold uppercase mb-1">Executor B</div>
+<div class="text-sm font-semibold text-on-surface">Log Processor</div>
+<div class="mt-2 flex justify-center items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+<span class="text-[9px] font-medium text-primary">RUNNING</span>
+</div>
+</div>
+<div class="neomorphic-raised bg-surface w-40 p-4 rounded-xl text-center">
+<div class="text-[9px] text-on-surface-variant font-bold uppercase mb-1">Executor C</div>
+<div class="text-sm font-semibold text-on-surface">Report Gen</div>
+<div class="mt-2 text-[9px] text-on-surface-variant">WAITING</div>
+</div>
+</div>
+</div>
+<!-- Decorative background pattern -->
+<div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(#6366f1 1px, transparent 1px); background-size: 24px 24px;"></div>
+</div>
+</div>
+<!-- Right: Timeline Log -->
+<div class="lg:col-span-1 flex flex-col h-full">
+<div class="neomorphic-raised rounded-2xl flex-grow flex flex-col overflow-hidden max-h-[600px]">
+<div class="p-6 bg-surface-container-low border-b border-white/40">
+<h3 class="font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">list_alt</span>
+                                    Coordination Log
+                                </h3>
+</div>
+<div class="flex-grow overflow-y-auto p-6 space-y-6">
+<!-- Log Entry -->
+<div class="relative pl-6 border-l-2 border-primary/20 pb-2">
+<div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-surface neomorphic-raised flex items-center justify-center">
+<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+</div>
+<div class="text-[10px] text-on-surface-variant font-medium mb-1 uppercase tracking-tight">14:22:04 • Verification Success</div>
+<div class="neomorphic-inset p-3 rounded-lg">
+<div class="flex justify-between items-center mb-1">
+<span class="text-xs font-semibold text-on-surface">Planner → Data Fetcher</span>
+<span class="material-symbols-outlined text-sm text-green-500" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<div class="text-xs text-on-surface-variant leading-relaxed">
+                                            Requested historical block data for shard #09. Batch size 500 records.
+                                        </div>
+<div class="mt-2 text-[10px] font-mono text-primary/70">tx: 0x9f1a...c4e2</div>
+</div>
+</div>
+<!-- Log Entry -->
+<div class="relative pl-6 border-l-2 border-primary/20 pb-2">
+<div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-surface neomorphic-raised flex items-center justify-center">
+<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+</div>
+<div class="text-[10px] text-on-surface-variant font-medium mb-1 uppercase tracking-tight">14:21:48 • Internal Transfer</div>
+<div class="neomorphic-inset p-3 rounded-lg">
+<div class="flex justify-between items-center mb-1">
+<span class="text-xs font-semibold text-on-surface">Data Fetcher → Log Processor</span>
+<span class="material-symbols-outlined text-sm text-green-500" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<div class="text-xs text-on-surface-variant leading-relaxed">
+                                            Transferred data payload (3.4MB) for sanitization and indexing.
+                                        </div>
+<div class="mt-2 text-[10px] font-mono text-primary/70">tx: 0x82b4...33a0</div>
+</div>
+</div>
+<!-- Log Entry (Current) -->
+<div class="relative pl-6 border-l-2 border-primary/20 pb-2">
+<div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-surface neomorphic-raised flex items-center justify-center ring-4 ring-primary/10">
+<div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+</div>
+<div class="text-[10px] text-primary font-bold mb-1 uppercase tracking-tight">14:22:15 • IN PROGRESS</div>
+<div class="neomorphic-inset p-3 rounded-lg border border-primary/20">
+<div class="flex justify-between items-center mb-1">
+<span class="text-xs font-semibold text-on-surface">Log Processor → Shard Index</span>
+</div>
+<div class="text-xs text-on-surface-variant leading-relaxed italic">
+                                            Executing cross-chain log reconciliation via LayerZero messaging bridge...
+                                        </div>
+</div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-low text-center">
+<button class="text-xs font-bold text-primary hover:underline">VIEW FULL HISTORICAL LEDGER</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Action Bar -->
+<footer class="sticky bottom-0 w-full p-4 px-8 bg-surface-container-low/95 backdrop-blur-md shadow-[0_-10px_20px_rgba(0,0,0,0.03)] flex flex-wrap justify-between items-center gap-4 border-t border-white/20">
+<div class="flex items-center gap-3">
+<button class="neomorphic-raised px-6 py-2.5 rounded-xl text-error font-semibold text-sm hover:shadow-[0_0_15px_rgba(220,38,38,0.2)] transition-all active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">cancel</span>
+                        Revoke All Agents
+                    </button>
+</div>
+<div class="flex items-center gap-4">
+<button class="neomorphic-raised px-5 py-2.5 rounded-xl text-on-surface-variant font-medium text-sm flex items-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">download</span>
+                        Export Audit Log as JSON
+                    </button>
+<button class="neomorphic-raised px-5 py-2.5 rounded-xl text-primary font-bold text-sm flex items-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">share</span>
+                        Share Link
+                    </button>
+</div>
+</footer>
+</main>
+</div>
+</body></html>
