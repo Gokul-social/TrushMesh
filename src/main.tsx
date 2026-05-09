@@ -2,8 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
+import type { WalletAdapter } from "@solana/wallet-adapter-base";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 import { Buffer } from "buffer";
 import { App } from "./App";
 import { runtimeConfig } from "./lib/runtimeConfig";
@@ -13,8 +13,14 @@ import { useSettingsStore } from "./stores/settingsStore";
 import "./styles.css";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
-if (!("Buffer" in window)) {
-  Object.assign(window, { Buffer });
+if (typeof window !== "undefined") {
+  try {
+    if (!("Buffer" in window)) {
+      Object.assign(window, { Buffer });
+    }
+  } catch {
+    // Ignore shim failures; app should still boot without crashing.
+  }
 }
 
 const queryClient = new QueryClient({
@@ -27,15 +33,39 @@ const queryClient = new QueryClient({
   }
 });
 
-const wallets = [new PhantomWalletAdapter()];
-
 function AppProviders() {
+  const [wallets, setWallets] = React.useState<WalletAdapter[]>([]);
   const settings = useSettingsStore((state) => ({
     rpcPreset: state.rpcPreset,
     customRpcUrl: state.customRpcUrl,
     autoConnectWallet: state.autoConnectWallet
   }));
   const endpoint = getEffectiveRpcEndpoint(settings, runtimeConfig.solanaRpcUrl);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const loadWallets = async () => {
+      try {
+        const { PhantomWalletAdapter } = await import("@solana/wallet-adapter-phantom");
+        if (!cancelled) {
+          setWallets([new PhantomWalletAdapter()]);
+        }
+      } catch (error) {
+        // Keep the app usable even if a wallet adapter fails to initialize.
+        console.error("Wallet adapter initialization failed", error);
+        if (!cancelled) {
+          setWallets([]);
+        }
+      }
+    };
+
+    void loadWallets();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <ConnectionProvider endpoint={endpoint}>

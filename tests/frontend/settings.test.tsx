@@ -13,6 +13,7 @@ import {
 import { ThemeProvider } from "../../src/components/ThemeProvider";
 import { Settings } from "../../src/pages/Settings";
 import { useSettingsStore } from "../../src/stores/settingsStore";
+import { getJwtFromLocalStorage } from "../../src/lib/utils";
 
 function createMemoryStorage() {
   const store = new Map<string, string>();
@@ -41,6 +42,27 @@ describe("settings helpers", () => {
       });
 
       expect(loadSettings()).toEqual(defaultSettings);
+    } finally {
+      if (originalDescriptor) {
+        Object.defineProperty(globalThis, "localStorage", originalDescriptor);
+      } else {
+        Reflect.deleteProperty(globalThis, "localStorage");
+      }
+    }
+  });
+
+  it("reads JWT storage safely when localStorage is blocked", () => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+
+    try {
+      Object.defineProperty(globalThis, "localStorage", {
+        configurable: true,
+        get() {
+          throw new Error("blocked");
+        }
+      });
+
+      expect(getJwtFromLocalStorage()).toBeNull();
     } finally {
       if (originalDescriptor) {
         Object.defineProperty(globalThis, "localStorage", originalDescriptor);

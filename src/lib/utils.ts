@@ -6,16 +6,51 @@ export function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
+function getLocalStorageSafe() {
+  try {
+    return globalThis.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 export function getJwtFromLocalStorage() {
-  return window.localStorage.getItem(JWT_STORAGE_KEY);
+  const storage = getLocalStorageSafe();
+  if (!storage) {
+    return null;
+  }
+
+  try {
+    return storage.getItem(JWT_STORAGE_KEY);
+  } catch {
+    return null;
+  }
 }
 
 export function setJwtInLocalStorage(token: string) {
-  window.localStorage.setItem(JWT_STORAGE_KEY, token);
+  const storage = getLocalStorageSafe();
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(JWT_STORAGE_KEY, token);
+  } catch {
+    // Ignore storage failures so auth helpers never crash UI flows.
+  }
 }
 
 export function clearJwtFromLocalStorage() {
-  window.localStorage.removeItem(JWT_STORAGE_KEY);
+  const storage = getLocalStorageSafe();
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.removeItem(JWT_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures so auth helpers never crash UI flows.
+  }
 }
 
 export function unwrapEnvelope<T>(payload: ApiEnvelope<T>): T {
