@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import * as d3 from "d3";
 import { useQuery } from "@tanstack/react-query";
@@ -90,8 +90,10 @@ function HierarchyTree({ jobId, ownerLabel }: { jobId: string; ownerLabel: strin
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [bounds, setBounds] = useState<TreeBounds>({ width: 920, height: 560 });
   const pollingIntervalMs = useSettingsStore((state) => state.pollingIntervalMs);
-  const liveAgents = useAgentStore((state) =>
-    Array.from(state.agents.values()).filter((agent) => agent.jobId === jobId)
+  const agentMap = useAgentStore((state) => state.agents);
+  const liveAgents = useMemo(
+    () => Array.from(agentMap.values()).filter((agent) => agent.jobId === jobId),
+    [agentMap, jobId]
   );
 
   const graphQuery = useQuery({
@@ -280,8 +282,10 @@ function CoordinationLog({
   jobId: string;
   onExport: () => Promise<void>;
 }) {
-  const realtimeMessages = useAgentStore((state) =>
-    state.messages.filter((message) => message.jobId === jobId)
+  const storedMessages = useAgentStore((state) => state.messages);
+  const realtimeMessages = useMemo(
+    () => storedMessages.filter((message) => message.jobId === jobId),
+    [storedMessages, jobId]
   );
   const pollingIntervalMs = useSettingsStore((state) => state.pollingIntervalMs);
 

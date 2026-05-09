@@ -35,12 +35,10 @@ const queryClient = new QueryClient({
 
 function AppProviders() {
   const [wallets, setWallets] = React.useState<WalletAdapter[]>([]);
-  const settings = useSettingsStore((state) => ({
-    rpcPreset: state.rpcPreset,
-    customRpcUrl: state.customRpcUrl,
-    autoConnectWallet: state.autoConnectWallet
-  }));
-  const endpoint = getEffectiveRpcEndpoint(settings, runtimeConfig.solanaRpcUrl);
+  const rpcPreset = useSettingsStore((state) => state.rpcPreset);
+  const customRpcUrl = useSettingsStore((state) => state.customRpcUrl);
+  const autoConnectWallet = useSettingsStore((state) => state.autoConnectWallet);
+  const endpoint = getEffectiveRpcEndpoint({ rpcPreset, customRpcUrl }, runtimeConfig.solanaRpcUrl);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -69,7 +67,7 @@ function AppProviders() {
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect={settings.autoConnectWallet}>
+      <WalletProvider wallets={wallets} autoConnect={autoConnectWallet}>
         <WalletModalProvider>
           <QueryClientProvider client={queryClient}>
             <App />

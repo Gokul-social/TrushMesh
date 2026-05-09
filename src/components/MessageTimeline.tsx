@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -28,8 +28,10 @@ function dedupeMessages(messages: AgentMessage[]) {
 
 export function MessageTimeline({ jobId }: MessageTimelineProps) {
   const parentRef = useRef<HTMLDivElement | null>(null);
-  const realtimeMessages = useAgentStore((state) =>
-    state.messages.filter((message) => message.jobId === jobId)
+  const storedMessages = useAgentStore((state) => state.messages);
+  const realtimeMessages = useMemo(
+    () => storedMessages.filter((message) => message.jobId === jobId),
+    [storedMessages, jobId]
   );
   const pollingIntervalMs = useSettingsStore((state) => state.pollingIntervalMs);
 
