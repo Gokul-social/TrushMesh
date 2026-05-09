@@ -253,6 +253,7 @@ export function Support() {
   const [submissionState, setSubmissionState] = useState<SubmissionState | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const searchInputId = useId();
+  const attachmentInputId = useId();
   const effectiveRpcEndpoint = getEffectiveRpcEndpoint(
     { rpcPreset, customRpcUrl },
     runtimeConfig.solanaRpcUrl
@@ -336,7 +337,7 @@ export function Support() {
     <div className="min-h-[calc(100vh-5rem)] p-4 pb-24 md:p-6 lg:p-8">
       <div className="mx-auto flex max-w-[1460px] flex-col gap-6">
         <section className="tm-shell-card tm-grid-bg overflow-hidden p-5 md:p-7 xl:p-8">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_360px] xl:items-end">
+          <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)] 2xl:items-end">
             <div>
               <div className="tm-kicker">Support Hub</div>
               <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -446,7 +447,7 @@ export function Support() {
             </h2>
           </div>
           {filteredActions.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
               {filteredActions.map((action) => (
                 <QuickActionCard key={action.id} action={action} onActivate={handleQuickAction} />
               ))}
@@ -459,7 +460,7 @@ export function Support() {
           )}
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)]">
+        <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)]">
           <div className="space-y-6">
             <SupportSection
               id="support-docs"
@@ -468,7 +469,7 @@ export function Support() {
               description="Everything your team needs to onboard operators, stabilize deployments, and diagnose runtime drift without leaving the Explorer shell."
             >
               {filteredDocs.length > 0 ? (
-                <div className="grid gap-4 lg:grid-cols-2">
+                <div className="grid gap-4 xl:grid-cols-2">
                   {filteredDocs.map((section) => (
                     <DocumentationCard
                       key={section.id}
@@ -513,7 +514,7 @@ export function Support() {
             </SupportSection>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 2xl:sticky 2xl:top-28 2xl:self-start">
             <SupportSection
               id="support-request-form"
               eyebrow="Support Request"
@@ -654,23 +655,30 @@ export function Support() {
                 </div>
 
                 <div className="tm-control-surface-muted rounded-[24px] px-4 py-4">
-                  <label htmlFor="support-attachment" className="text-sm font-medium text-silk-text-secondary">
+                  <label htmlFor={attachmentInputId} className="text-sm font-medium text-silk-text-secondary">
                     Attachment placeholder
                   </label>
-                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <div className="mt-3 rounded-[20px] bg-white/60 p-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <label
+                        htmlFor={attachmentInputId}
+                        className="tm-focus-ring inline-flex cursor-pointer items-center justify-center rounded-full bg-silk-primary px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105"
+                      >
+                        Choose file
+                      </label>
+                      <span className={cx("text-sm", attachmentLabel ? "break-all text-silk-text-primary" : "text-silk-text-tertiary")}>
+                        {attachmentLabel || "No file chosen"}
+                      </span>
+                    </div>
                     <input
-                      id="support-attachment"
+                      id={attachmentInputId}
                       type="file"
-                      className="tm-focus-ring max-w-full text-sm text-silk-text-secondary file:mr-4 file:rounded-full file:border-0 file:bg-silk-primary file:px-4 file:py-2 file:font-semibold file:text-white"
+                      className="sr-only"
                       onChange={onAttachmentChange}
                     />
-                    {attachmentLabel ? (
-                      <span className="break-all text-sm text-silk-text-primary">{attachmentLabel}</span>
-                    ) : (
-                      <span className="text-sm text-silk-text-tertiary">
-                        Logs or screenshots stay local until a support upload API is connected.
-                      </span>
-                    )}
+                    <p className="mt-3 text-sm leading-7 text-silk-text-tertiary">
+                      Logs or screenshots stay local until a support upload API is connected.
+                    </p>
                   </div>
                   {errors.attachmentName ? (
                     <p className="mt-2 text-sm text-silk-status-revoked">{errors.attachmentName.message}</p>
