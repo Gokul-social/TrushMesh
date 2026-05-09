@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  walletAddr String   @unique
+  solName    String?
+  createdAt  DateTime @default(now())
+  jobs       Job[]
+  agents     Agent[]
+
+  @@index([createdAt])
+}
+
+model Job {
+  id          String         @id @default(cuid())
+  onchainId   String         @unique
+  ownerId     String
+  owner       User           @relation(fields: [ownerId], references: [id])
+  description String
+  template    String
+  budgetSol   Decimal        @db.Decimal(18, 9)
+  status      JobStatus      @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  agents      Agent[]
+  messages    AgentMessage[]
+
+  @@index([ownerId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+enum JobStatus {
+  ACTIVE
+  COMPLETE
+  REVOKED
+}
+
+model Agent {
+  id               String         @id @default(cuid())
+  jobId            String
+  job              Job            @relation(fields: [jobId], references: [id])
+  ownerId          String
+  owner            User           @relation(fields: [ownerId], references: [id])
+  solSubName       String         @unique
+  type             AgentType
+  status           AgentStatus    @default(ACTIVE)
+  parentAgentId    String?
+  parentAgent      Agent?         @relation("AgentHierarchy", fields: [parentAgentId], references: [id])
+  children         Agent[]        @relation("AgentHierarchy")
+  spawnTxHash      String
+  revokedAt        DateTime?
+  revokeTxHash     String?
+  actionCount      Int            @default(0)
+  createdAt        DateTime       @default(now())
+  sentMessages     AgentMessage[] @relation("Sender")
+  receivedMessages AgentMessage[] @relation("Receiver")
+
+  @@index([jobId, status])
+  @@index([ownerId, status])
+  @@index([parentAgentId])
+}
+
+enum AgentType {
+  PLANNER
+  EXECUTOR
+  ANALYZER
+  TRADER
+  CONFIRMER
+}
+
+enum AgentStatus {
+  ACTIVE
+  WARNING
+  REVOKED
+  COMPLETE
+}
+
+model AgentMessage {
+  id           String   @id @default(cuid())
+  jobId        String
+  job          Job      @relation(fields: [jobId], references: [id])
+  senderId     String
+  sender       Agent    @relation("Sender", fields: [senderId], references: [id])
+  receiverId   String?
+  receiver     Agent?   @relation("Receiver", fields: [receiverId], references: [id])
+  action       String
+  txHash       String
+  signatureHex String
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([jobId, createdAt, id])
+  @@index([senderId, createdAt])
+  @@index([receiverId, createdAt])
+  @@unique([senderId, txHash])
+}
