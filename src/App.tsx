@@ -1,35 +1,45 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { NavBar } from "./components/NavBar";
+import { AppShell, PlaceholderScreen, shellPageMeta } from "./components/AppShell";
 import { Explorer } from "./pages/Explorer";
 import { Deploy } from "./pages/Deploy";
 import { JobDetail } from "./pages/JobDetail";
-
-function DocsPlaceholder() {
-  return (
-    <div className="mx-auto max-w-4xl px-6 py-28">
-      <div className="neo-raised p-8">
-        <h1 className="text-2xl font-semibold text-silk-text-primary">Docs</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-silk-text-secondary">
-          The audit explorer is wired and ready. This route is a placeholder for operator docs,
-          runbooks, and protocol notes.
-        </p>
-      </div>
-    </div>
-  );
-}
+import { Landing } from "./pages/Landing";
 
 export function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-silk-bg">
-        <NavBar />
-        <Routes>
-          <Route path="/" element={<Explorer />} />
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route element={<AppShell />}>
+          <Route path="/explorer" element={<Explorer />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/deploy" element={<Deploy />} />
-          <Route path="/docs" element={<DocsPlaceholder />} />
-        </Routes>
-      </div>
+          <Route
+            path="/docs"
+            element={<PlaceholderScreen {...shellPageMeta.docs} ctaLabel="Open Explorer" />}
+          />
+          <Route
+            path="/about"
+            element={<PlaceholderScreen {...shellPageMeta.about} ctaLabel="Return to Landing" ctaTo="/" />}
+          />
+          <Route
+            path="/analytics"
+            element={<PlaceholderScreen {...shellPageMeta.analytics} ctaLabel="View Active Jobs" />}
+          />
+          <Route
+            path="/nodes"
+            element={<PlaceholderScreen {...shellPageMeta.nodes} ctaLabel="Open Explorer" />}
+          />
+          <Route
+            path="/settings"
+            element={<PlaceholderScreen {...shellPageMeta.settings} ctaLabel="Back to Explorer" />}
+          />
+          <Route
+            path="/support"
+            element={<PlaceholderScreen {...shellPageMeta.support} ctaLabel="Back to Explorer" />}
+          />
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 }

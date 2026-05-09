@@ -57,9 +57,9 @@ export function Explorer() {
   useWebSocket({ jobId: selectedJobId, enabled: Boolean(selectedJobId) });
 
   return (
-    <div className="h-screen overflow-hidden bg-silk-bg pt-20">
-      <div className="flex h-[calc(100vh-5rem)] gap-5 px-5 pb-5">
-        <aside className="neo-raised flex w-[240px] flex-col p-4">
+    <div className="min-h-[calc(100vh-5rem)] overflow-hidden p-4 pb-24 md:p-6 lg:p-8">
+      <div className="flex h-[calc(100vh-9rem)] min-h-[680px] gap-5">
+        <aside className="tm-shell-card flex w-[260px] flex-col p-4">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-silk-text-primary">Jobs</h2>
             <div className="mt-4 flex gap-2">
@@ -97,7 +97,11 @@ export function Explorer() {
                 return (
                   <button
                     key={job.id}
-                    className={selected ? "neo-inset relative w-full p-4 text-left" : "neo-raised relative w-full p-4 text-left"}
+                    className={
+                      selected
+                        ? "neo-inset relative w-full rounded-[22px] p-4 text-left"
+                        : "neo-raised relative w-full rounded-[22px] p-4 text-left"
+                    }
                     onClick={() => {
                       setSelectedJobId(job.id);
                       setSelectedNodeId(null);
@@ -139,7 +143,7 @@ export function Explorer() {
           </button>
         </aside>
 
-        <main className="neo-raised relative flex-1 overflow-hidden">
+        <main className="tm-shell-card relative flex-1 overflow-hidden">
           <div className="absolute right-5 top-5 z-10 flex gap-3">
             {statsQuery.isLoading ? (
               <>
