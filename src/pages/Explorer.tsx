@@ -15,6 +15,7 @@ import type { ApiEnvelope, GlobalStats, Job } from "../types";
 import { ForceGraph } from "../components/ForceGraph";
 import { NodeDetailPanel } from "../components/NodeDetailPanel";
 import { ErrorCard, SkeletonBlock } from "../components/Feedback";
+import { useSettingsStore } from "../stores/settingsStore";
 
 type JobFilter = "ALL" | "ACTIVE" | "REVOKED";
 
@@ -25,6 +26,7 @@ export function Explorer() {
   const [filter, setFilter] = useState<JobFilter>("ALL");
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const pollingIntervalMs = useSettingsStore((state) => state.pollingIntervalMs);
 
   const jobsQuery = useQuery({
     queryKey: ["jobs", filter],
@@ -38,7 +40,7 @@ export function Explorer() {
           })
         ).data
       ),
-    refetchInterval: runtimeConfig.enableRealtime ? false : runtimeConfig.pollingIntervalMs
+    refetchInterval: runtimeConfig.enableRealtime ? false : pollingIntervalMs
   });
 
   const statsQuery = useQuery({
@@ -110,7 +112,7 @@ export function Explorer() {
                     {selected ? (
                       <span
                         className="absolute left-0 top-4 h-12 w-1 rounded-r-full"
-                        style={{ backgroundColor: "#6366f1" }}
+                        style={{ backgroundColor: "rgb(var(--tm-color-primary))" }}
                       />
                     ) : null}
                     <div className="font-mono text-[11px] text-silk-text-tertiary">

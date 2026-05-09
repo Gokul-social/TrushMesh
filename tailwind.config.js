@@ -5,19 +5,19 @@ export default {
     extend: {
       colors: {
         silk: {
-          bg: "#e8eaf0",
-          primary: "#6366f1",
-          secondary: "#7c3aed",
+          bg: "rgb(var(--tm-color-bg) / <alpha-value>)",
+          primary: "rgb(var(--tm-color-primary) / <alpha-value>)",
+          secondary: "rgb(var(--tm-color-secondary) / <alpha-value>)",
           text: {
-            primary: "#1e1b4b",
-            secondary: "#64748b",
-            tertiary: "#94a3b8"
+            primary: "rgb(var(--tm-color-text-primary) / <alpha-value>)",
+            secondary: "rgb(var(--tm-color-text-secondary) / <alpha-value>)",
+            tertiary: "rgb(var(--tm-color-text-tertiary) / <alpha-value>)"
           },
           status: {
-            active: "#6366f1",
-            warning: "#f59e0b",
-            revoked: "#ef4444",
-            complete: "#10b981"
+            active: "rgb(var(--tm-color-status-active) / <alpha-value>)",
+            warning: "rgb(var(--tm-color-status-warning) / <alpha-value>)",
+            revoked: "rgb(var(--tm-color-status-revoked) / <alpha-value>)",
+            complete: "rgb(var(--tm-color-status-complete) / <alpha-value>)"
           }
         }
       },
@@ -26,9 +26,8 @@ export default {
         mono: ["Space Mono", "monospace"]
       },
       boxShadow: {
-        neo: "6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.6)",
-        neoInset:
-          "inset 4px 4px 8px rgba(0,0,0,0.06), inset -4px -4px 8px rgba(255,255,255,0.5)"
+        neo: "var(--tm-shadow-neo)",
+        neoInset: "var(--tm-shadow-neo-inset)"
       },
       borderRadius: {
         silk: "18px"

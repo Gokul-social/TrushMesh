@@ -50,15 +50,37 @@ type PrismaOverrides = {
 export function makeBasePrisma(overrides: PrismaOverrides = {}) {
   const txClient = {
     user: {
+      findUnique: async () => testUser,
+      upsert: async () => testUser,
+      update: async () => testUser,
       ...(overrides.user ?? {})
     },
     job: {
+      findUnique: async () => null,
+      findFirst: async () => null,
+      create: async () => null,
+      update: async () => null,
+      findMany: async () => [],
+      count: async () => 0,
       ...(overrides.job ?? {})
     },
     agent: {
+      findUnique: async () => null,
+      findFirst: async () => null,
+      findMany: async () => [],
+      create: async ({ data }: { data: Record<string, unknown> }) => ({
+        id: "agent_tx",
+        ...data
+      }),
+      createMany: async ({ data }: { data: unknown[] }) => ({ count: data.length }),
+      update: async () => null,
+      updateMany: async () => ({ count: 0 }),
+      count: async () => 0,
       ...(overrides.agent ?? {})
     },
     agentMessage: {
+      create: async () => null,
+      count: async () => 0,
       ...(overrides.agentMessage ?? {})
     }
   };
