@@ -228,10 +228,14 @@ function getStorage(storage?: StorageLike | null) {
     return storage;
   }
 
-  const browserGlobal = globalThis as typeof globalThis & {
-    localStorage?: StorageLike;
-  };
-  return browserGlobal.localStorage ?? null;
+  try {
+    const browserGlobal = globalThis as typeof globalThis & {
+      localStorage?: StorageLike;
+    };
+    return browserGlobal.localStorage ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function loadSettings(storage?: StorageLike | null): AppSettings {
@@ -258,7 +262,11 @@ export function saveSettings(settings: AppSettings, storage?: StorageLike | null
     return;
   }
 
-  resolvedStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  try {
+    resolvedStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // Ignore storage write failures so preferences never block app usage.
+  }
 }
 
 export function resetStoredSettings(storage?: StorageLike | null) {
@@ -267,18 +275,26 @@ export function resetStoredSettings(storage?: StorageLike | null) {
     return;
   }
 
-  resolvedStorage.removeItem(SETTINGS_STORAGE_KEY);
+  try {
+    resolvedStorage.removeItem(SETTINGS_STORAGE_KEY);
+  } catch {
+    // Ignore storage reset failures so the app can continue rendering.
+  }
 }
 
 export function getSystemColorScheme(): SystemColorScheme {
-  const browserGlobal = globalThis as typeof globalThis & {
-    matchMedia?: (query: string) => { matches: boolean };
-  };
-  if (typeof browserGlobal.matchMedia !== "function") {
+  try {
+    const browserGlobal = globalThis as typeof globalThis & {
+      matchMedia?: (query: string) => { matches: boolean };
+    };
+    if (typeof browserGlobal.matchMedia !== "function") {
+      return "light";
+    }
+
+    return browserGlobal.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  } catch {
     return "light";
   }
-
-  return browserGlobal.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export function resolveThemePreference(

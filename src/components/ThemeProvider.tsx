@@ -29,9 +29,13 @@ function applyTheme(resolvedTheme: ResolvedTheme) {
 }
 
 export function initializeThemeOnLoad() {
-  const settings = loadSettings();
-  const systemColorScheme = getSystemColorScheme();
-  applyTheme(resolveThemePreference(settings.themePreference, systemColorScheme));
+  try {
+    const settings = loadSettings();
+    const systemColorScheme = getSystemColorScheme();
+    applyTheme(resolveThemePreference(settings.themePreference, systemColorScheme));
+  } catch {
+    applyTheme("light-mesh");
+  }
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -51,8 +55,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
 
     update();
-    mediaQuery.addEventListener("change", update);
-    return () => mediaQuery.removeEventListener("change", update);
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", update);
+      return () => mediaQuery.removeEventListener("change", update);
+    }
+
+    if (typeof mediaQuery.addListener === "function") {
+      mediaQuery.addListener(update);
+      return () => mediaQuery.removeListener(update);
+    }
+
+    return;
   }, []);
 
   const resolvedTheme = resolveThemePreference(themePreference, systemColorScheme);

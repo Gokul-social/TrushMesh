@@ -5,6 +5,7 @@ import {
   SETTINGS_STORAGE_KEY,
   defaultSettings,
   getEffectiveRpcEndpoint,
+  getSystemColorScheme,
   loadSettings,
   resolveThemePreference,
   saveSettings
@@ -28,6 +29,27 @@ function createMemoryStorage() {
 }
 
 describe("settings helpers", () => {
+  it("falls back safely when browser storage access throws", () => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+
+    try {
+      Object.defineProperty(globalThis, "localStorage", {
+        configurable: true,
+        get() {
+          throw new Error("blocked");
+        }
+      });
+
+      expect(loadSettings()).toEqual(defaultSettings);
+    } finally {
+      if (originalDescriptor) {
+        Object.defineProperty(globalThis, "localStorage", originalDescriptor);
+      } else {
+        Reflect.deleteProperty(globalThis, "localStorage");
+      }
+    }
+  });
+
   it("persists and restores user preferences", () => {
     const storage = createMemoryStorage();
     const nextSettings = {
@@ -46,6 +68,7 @@ describe("settings helpers", () => {
 
   it("resolves system theme and invalid custom rpc safely", () => {
     expect(resolveThemePreference("system", "dark")).toBe("dark-mesh");
+    expect(getSystemColorScheme()).toBe("light");
     expect(
       getEffectiveRpcEndpoint(
         {
