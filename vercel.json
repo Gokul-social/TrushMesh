@@ -5,11 +5,35 @@
   "outputDirectory": "dist/client",
   "rewrites": [
     {
+      "source": "/explorer",
+      "destination": "/index.html"
+    },
+    {
       "source": "/deploy",
       "destination": "/index.html"
     },
     {
       "source": "/docs",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/analytics",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/nodes",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/support",
       "destination": "/index.html"
     },
     {
