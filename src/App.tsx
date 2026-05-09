@@ -4,10 +4,17 @@ import { AppShell, PlaceholderScreen, shellPageMeta } from "./components/AppShel
 import { Explorer } from "./pages/Explorer";
 import { JobDetail } from "./pages/JobDetail";
 import { Landing } from "./pages/Landing";
-import { Settings } from "./pages/Settings";
 
 const Deploy = lazy(async () => ({
   default: (await import("./pages/Deploy")).Deploy
+}));
+
+const Settings = lazy(async () => ({
+  default: (await import("./pages/Settings")).Settings
+}));
+
+const Support = lazy(async () => ({
+  default: (await import("./pages/Support")).Support
 }));
 
 function RouteFallback() {
@@ -46,7 +53,7 @@ export function App() {
             />
             <Route
               path="/support"
-              element={<PlaceholderScreen {...shellPageMeta.support} ctaLabel="Back to Explorer" />}
+              element={<Support />}
             />
           </Route>
         </Routes>
