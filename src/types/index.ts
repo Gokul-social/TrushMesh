@@ -101,6 +101,7 @@ export type MessagePage = {
 export type GlobalStats = {
   activeJobs: number;
   totalAgents: number;
+  totalMessages: number;
   unauthorizedActions: number;
 };
 

@@ -1,59 +1,97 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts";
 import { apiClient } from "../lib/axios";
-import { unwrapEnvelope } from "../lib/utils";
-import type { ApiEnvelope, GlobalStats } from "../types";
-import { AnalyticsIcon, CheckIcon, InfoIcon, ShieldIcon, TerminalIcon, WarningIcon } from "../components/Icons";
+import { formatRelativeTime, truncateMiddle, unwrapEnvelope } from "../lib/utils";
+import type { ApiEnvelope, GlobalStats, Job, JobStatus } from "../types";
+import { AnalyticsIcon, InfoIcon, WarningIcon } from "../components/Icons";
 import { ErrorCard, SkeletonBlock } from "../components/Feedback";
 
-function AnalyticsCard({
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
+
+function StatCard({
   title,
   value,
   caption,
-  tone = "primary"
+  tone = "primary",
+  pulse = false
 }: {
   title: string;
   value: string;
   caption: string;
-  tone?: "primary" | "warning" | "success";
+  tone?: "primary" | "warning" | "success" | "default";
+  pulse?: boolean;
 }) {
   const toneClass =
     tone === "warning"
       ? "text-amber-500"
       : tone === "success"
         ? "text-emerald-500"
-        : "text-silk-primary";
+        : tone === "default"
+          ? "text-silk-text-primary"
+          : "text-silk-primary";
 
   return (
     <div className="tm-control-surface rounded-[26px] px-5 py-5">
-      <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-silk-text-tertiary">{title}</div>
+      <div className="flex items-center gap-2">
+        <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-silk-text-tertiary">{title}</div>
+        {pulse && (
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-silk-primary opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-silk-primary" />
+          </span>
+        )}
+      </div>
       <div className={`mt-3 text-3xl font-semibold tracking-tight ${toneClass}`}>{value}</div>
       <p className="mt-3 text-sm leading-7 text-silk-text-secondary">{caption}</p>
     </div>
   );
 }
 
-function GuidanceCard({
-  title,
-  icon,
-  children
-}: {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
+const STATUS_COLORS: Record<JobStatus, string> = {
+  ACTIVE: "#6366f1",
+  COMPLETE: "#10b981",
+  REVOKED: "#ef4444",
+  PENDING: "#f59e0b"
+};
+
+function StatusBadge({ status }: { status: JobStatus }) {
+  const cls: Record<JobStatus, string> = {
+    ACTIVE: "bg-indigo-100 text-indigo-700",
+    COMPLETE: "bg-emerald-100 text-emerald-700",
+    REVOKED: "bg-red-100 text-red-600",
+    PENDING: "bg-amber-100 text-amber-700"
+  };
   return (
-    <div className="tm-shell-card p-5">
-      <div className="flex items-center gap-3">
-        <span className="neo-pill flex h-11 w-11 items-center justify-center px-0 py-0 text-silk-primary">{icon}</span>
-        <h2 className="text-lg font-semibold text-silk-text-primary">{title}</h2>
-      </div>
-      <div className="mt-4 text-sm leading-7 text-silk-text-secondary">{children}</div>
-    </div>
+    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${cls[status]}`}>
+      {status.charAt(0) + status.slice(1).toLowerCase()}
+    </span>
   );
 }
 
 export function Analytics() {
+  const navigate = useNavigate();
+
   const statsQuery = useQuery({
     queryKey: ["global-stats"],
     queryFn: async () =>
@@ -61,11 +99,34 @@ export function Analytics() {
     refetchInterval: 30_000
   });
 
+  const jobsQuery = useQuery({
+    queryKey: ["jobs-all"],
+    queryFn: async () =>
+      unwrapEnvelope(
+        (await apiClient.get<ApiEnvelope<Job[]>>("/jobs", { params: { limit: 200 } })).data
+      ),
+    refetchInterval: 30_000
+  });
+
   const stats = statsQuery.data;
+  const jobs = jobsQuery.data ?? [];
+
+  const pieData = (["ACTIVE", "COMPLETE", "REVOKED", "PENDING"] as JobStatus[])
+    .map((s) => ({ name: s.charAt(0) + s.slice(1).toLowerCase(), value: jobs.filter((j) => j.status === s).length, color: STATUS_COLORS[s] }))
+    .filter((d) => d.value > 0);
+
+  const topJobs = [...jobs].sort((a, b) => (b.agentCount ?? 0) - (a.agentCount ?? 0)).slice(0, 10);
+
+  const lastUpdated = statsQuery.dataUpdatedAt
+    ? formatRelativeTime(new Date(statsQuery.dataUpdatedAt).toISOString())
+    : null;
+
+  const isLoading = statsQuery.isLoading || jobsQuery.isLoading;
 
   return (
     <div className="min-h-[calc(100vh-5rem)] p-4 pb-24 md:p-6 lg:p-8">
       <div className="mx-auto max-w-[1500px] space-y-6">
+        {/* Hero */}
         <section className="tm-shell-card tm-grid-bg overflow-hidden px-6 py-6 md:px-8">
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-end">
             <div>
@@ -74,180 +135,318 @@ export function Analytics() {
                 TrustMesh analytics
               </h1>
               <p className="mt-4 max-w-3xl text-base leading-8 text-silk-text-secondary">
-                Read system-wide coordination health through live counters, risk signals, and operator guidance that explains what each metric means.
+                Real-time metrics across all jobs, agents, and coordination messages on the platform.
               </p>
             </div>
-
-            <div className="tm-control-surface rounded-[28px] p-5">
-              <div className="flex items-center gap-3">
-                <span className="neo-pill flex h-11 w-11 items-center justify-center px-0 py-0 text-silk-primary">
-                  <AnalyticsIcon className="h-5 w-5" />
-                </span>
-                <div>
-                  <div className="text-sm font-semibold text-silk-text-primary">Signal integrity</div>
-                  <div className="text-sm text-silk-text-secondary">
-                    Interpret live counts alongside graph state and message verification, not in isolation.
-                  </div>
+            <div className="flex items-center justify-between xl:justify-end">
+              <div className="tm-control-surface rounded-[20px] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <AnalyticsIcon className="h-4 w-4 text-silk-primary" />
+                  <div className="text-sm font-semibold text-silk-text-primary">Live dashboard</div>
                 </div>
+                {lastUpdated && (
+                  <p className="mt-1 text-xs text-silk-text-tertiary">Updated {lastUpdated}</p>
+                )}
               </div>
             </div>
           </div>
         </section>
 
-        {statsQuery.isLoading ? (
-          <div className="grid gap-4 md:grid-cols-3">
-            <SkeletonBlock className="h-40 rounded-[28px]" />
-            <SkeletonBlock className="h-40 rounded-[28px]" />
-            <SkeletonBlock className="h-40 rounded-[28px]" />
+        {/* Stat cards */}
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonBlock key={i} className="h-36 rounded-[28px]" />
+            ))}
           </div>
         ) : statsQuery.isError ? (
           <ErrorCard
-            message={(statsQuery.error as Error).message || "Global analytics could not be loaded."}
+            message={(statsQuery.error as Error).message || "Analytics could not be loaded."}
             onRetry={() => void statsQuery.refetch()}
           />
         ) : (
-          <div className="grid gap-4 md:grid-cols-3">
-            <AnalyticsCard
-              title="Active Jobs"
-              value={String(stats?.activeJobs ?? 0)}
-              caption="Jobs currently executing or waiting on new coordination messages."
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+          >
+            <StatCard
+              title="Total Jobs"
+              value={String(jobs.length)}
+              caption="All jobs across all statuses."
+              tone="default"
             />
-            <AnalyticsCard
-              title="Agents Deployed"
+            <StatCard
+              title="Active Agents"
               value={String(stats?.totalAgents ?? 0)}
-              caption="Total planner, executor, and supporting agents visible to the current operator."
+              caption="Currently deployed across all running jobs."
+              tone="primary"
+              pulse
+            />
+            <StatCard
+              title="Messages Logged"
+              value={String(stats?.totalMessages ?? 0)}
+              caption="Total signed delegation events recorded."
               tone="success"
             />
-            <AnalyticsCard
+            <StatCard
               title="Unauthorized Actions"
               value={String(stats?.unauthorizedActions ?? 0)}
-              caption="Actions blocked or flagged as unsafe. This is the first number to inspect during an incident."
+              caption="Flagged actions that failed verification."
               tone="warning"
             />
-          </div>
+          </motion.div>
         )}
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
-          <div className="space-y-6">
-            <GuidanceCard title="How to read the counters" icon={<InfoIcon className="h-5 w-5" />}>
-              <ul className="space-y-3">
-                <li className="rounded-[20px] bg-white/60 px-4 py-4">
-                  <strong className="text-silk-text-primary">Active jobs</strong> tell you how much operator attention the mesh needs right now.
-                </li>
-                <li className="rounded-[20px] bg-white/60 px-4 py-4">
-                  <strong className="text-silk-text-primary">Agent count</strong> reveals operational fan-out. Rising agent count with flat job count usually means jobs are becoming more complex.
-                </li>
-                <li className="rounded-[20px] bg-white/60 px-4 py-4">
-                  <strong className="text-silk-text-primary">Unauthorized actions</strong> should always be reviewed together with message history and graph state before labeling the event benign.
-                </li>
-              </ul>
-            </GuidanceCard>
+        {/* Charts row */}
+        <div className="grid gap-6 xl:grid-cols-2">
+          {/* Pie chart */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.15 }}
+            className="tm-shell-card p-6"
+          >
+            <h2 className="text-base font-semibold text-silk-text-primary">Job Status Distribution</h2>
+            <p className="mt-1 text-sm text-silk-text-secondary">Breakdown of all jobs by current status.</p>
 
-            <GuidanceCard title="Metric catalog" icon={<TerminalIcon className="h-5 w-5" />}>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="neo-inset rounded-[22px] px-4 py-4">
-                  <div className="text-sm font-semibold text-silk-text-primary">Throughput</div>
-                  <p className="mt-2 text-sm leading-7 text-silk-text-secondary">
-                    Pair active job count with message frequency to understand whether a quiet mesh is healthy or stalled.
-                  </p>
-                </div>
-                <div className="neo-inset rounded-[22px] px-4 py-4">
-                  <div className="text-sm font-semibold text-silk-text-primary">Verification health</div>
-                  <p className="mt-2 text-sm leading-7 text-silk-text-secondary">
-                    Signature verification failures should correlate with clear signer or SNS issues, not random runtime drift.
-                  </p>
-                </div>
-                <div className="neo-inset rounded-[22px] px-4 py-4">
-                  <div className="text-sm font-semibold text-silk-text-primary">Branch stability</div>
-                  <p className="mt-2 text-sm leading-7 text-silk-text-secondary">
-                    Repeated revocations in one subtree usually point to an authority or workflow design problem.
-                  </p>
-                </div>
-                <div className="neo-inset rounded-[22px] px-4 py-4">
-                  <div className="text-sm font-semibold text-silk-text-primary">Latency suspicion</div>
-                  <p className="mt-2 text-sm leading-7 text-silk-text-secondary">
-                    If counts feel stale, compare websocket behavior with polling cadence before assuming the job stopped.
-                  </p>
-                </div>
+            {jobsQuery.isLoading ? (
+              <SkeletonBlock className="mt-6 h-64 rounded-[20px]" />
+            ) : jobsQuery.isError ? (
+              <ErrorCard
+                message="Job distribution could not be loaded."
+                onRetry={() => void jobsQuery.refetch()}
+              />
+            ) : pieData.length === 0 ? (
+              <div className="mt-8 flex flex-col items-center py-8 text-center">
+                <AnalyticsIcon className="h-12 w-12 text-silk-text-tertiary" />
+                <p className="mt-3 text-sm text-silk-text-secondary">No jobs yet. Deploy your first job to see the chart.</p>
+                <Link to="/deploy" className="neo-button mt-4 text-sm">Go to Deployer</Link>
               </div>
-            </GuidanceCard>
-          </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {pieData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: "rgb(var(--tm-color-bg))",
+                      border: "none",
+                      borderRadius: "14px",
+                      boxShadow: "var(--tm-shadow-neo)",
+                      fontSize: "13px"
+                    }}
+                  />
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
+                    formatter={(value) => <span className="text-sm text-silk-text-secondary">{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </motion.div>
 
-          <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              className="tm-shell-card p-5"
-            >
-              <div className="flex items-center gap-3">
-                <span className="neo-pill flex h-11 w-11 items-center justify-center px-0 py-0 text-emerald-500">
-                  <CheckIcon className="h-5 w-5" />
-                </span>
-                <div>
-                  <div className="text-sm font-semibold text-silk-text-primary">Healthy operating pattern</div>
-                  <div className="text-sm text-silk-text-secondary">
-                    Active jobs rise, agents scale predictably, and unauthorized actions remain flat.
-                  </div>
-                </div>
-              </div>
-              <div className="mt-5 space-y-3">
-                <div className="rounded-[22px] bg-white/60 px-4 py-4 text-sm leading-7 text-silk-text-secondary">
-                  Use exports and graph snapshots at regular checkpoints so you can compare normal operation against incident behavior later.
-                </div>
-              </div>
-            </motion.div>
+          {/* Line chart placeholder */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            viewport={{ once: true, amount: 0.15 }}
+            className="tm-shell-card p-6"
+          >
+            <h2 className="text-base font-semibold text-silk-text-primary">Agent Activity Timeline</h2>
+            <p className="mt-1 text-sm text-silk-text-secondary">Message events over the last 24 hours.</p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              viewport={{ once: true, amount: 0.15 }}
-              className="tm-shell-card p-5"
-            >
-              <div className="flex items-center gap-3">
-                <span className="neo-pill flex h-11 w-11 items-center justify-center px-0 py-0 text-amber-500">
-                  <WarningIcon className="h-5 w-5" />
-                </span>
-                <div>
-                  <div className="text-sm font-semibold text-silk-text-primary">Escalation pattern</div>
-                  <div className="text-sm text-silk-text-secondary">
-                    Unauthorized actions rise while the graph shows a planner branch widening or stalling.
-                  </div>
-                </div>
+            {jobs.length > 0 ? (
+              <ActivityChart jobId={jobs.find((j) => j.status === "ACTIVE")?.id ?? jobs[0].id} />
+            ) : (
+              <div className="mt-8 flex flex-col items-center py-8 text-center">
+                <InfoIcon className="h-12 w-12 text-silk-text-tertiary" />
+                <p className="mt-3 text-sm text-silk-text-secondary">
+                  Open a job in the Explorer to view its message activity timeline.
+                </p>
+                <Link to="/explorer" className="neo-button mt-4 text-sm">Go to Explorer</Link>
               </div>
-              <div className="mt-5 space-y-3">
-                <div className="rounded-[22px] bg-white/60 px-4 py-4 text-sm leading-7 text-silk-text-secondary">
-                  Review the coordination log immediately, then decide whether a branch-level revocation is safer than continuing execution.
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              viewport={{ once: true, amount: 0.15 }}
-              className="tm-shell-card p-5"
-            >
-              <div className="flex items-center gap-3">
-                <span className="neo-pill flex h-11 w-11 items-center justify-center px-0 py-0 text-silk-primary">
-                  <ShieldIcon className="h-5 w-5" />
-                </span>
-                <div>
-                  <div className="text-sm font-semibold text-silk-text-primary">Review cadence</div>
-                  <div className="text-sm text-silk-text-secondary">
-                    Operators should review these metrics alongside support runbooks, not as a separate dashboard ritual.
-                  </div>
-                </div>
-              </div>
-              <div className="mt-5 rounded-[22px] bg-white/60 px-4 py-4 text-sm leading-7 text-silk-text-secondary">
-                Daily: global counts. Per incident: graph snapshot plus message export. Per release: compare auth failures, revocations, and deployment completion time.
-              </div>
-            </motion.div>
-          </div>
+            )}
+          </motion.div>
         </div>
+
+        {/* Top jobs table */}
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          className="tm-shell-card overflow-hidden"
+        >
+          <div className="border-b border-white/20 px-6 py-4">
+            <h2 className="text-base font-semibold text-silk-text-primary">Top Active Jobs</h2>
+            <p className="mt-0.5 text-sm text-silk-text-secondary">Sorted by agent count, showing top 10.</p>
+          </div>
+
+          {jobsQuery.isLoading ? (
+            <div className="space-y-2 p-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonBlock key={i} className="h-14 rounded-[16px]" />
+              ))}
+            </div>
+          ) : topJobs.length === 0 ? (
+            <div className="flex flex-col items-center px-6 py-12 text-center">
+              <AnalyticsIcon className="h-12 w-12 text-silk-text-tertiary" />
+              <h3 className="mt-4 text-base font-semibold text-silk-text-primary">No jobs yet</h3>
+              <p className="mt-2 text-sm text-silk-text-secondary">Deploy your first job to see analytics.</p>
+              <Link to="/deploy" className="neo-button mt-5 text-sm">Go to Deployer</Link>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-4 border-b border-white/10 px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-silk-text-tertiary">
+                <span>Job ID / Owner</span>
+                <span className="hidden sm:block">Agents</span>
+                <span className="hidden md:block">Status</span>
+                <span className="hidden lg:block">Created</span>
+                <span>Actions</span>
+              </div>
+              {topJobs.map((job) => (
+                <button
+                  key={job.id}
+                  type="button"
+                  onClick={() => navigate(`/jobs/${job.id}`)}
+                  className="grid w-full grid-cols-[1fr_auto_auto_auto_auto] items-center gap-x-4 border-b border-white/10 px-6 py-3.5 text-left transition-all last:border-0 hover:bg-white/30"
+                >
+                  <div className="min-w-0">
+                    <div className="font-mono text-[13px] font-medium text-silk-text-primary">
+                      {truncateMiddle(job.onchainId, 8, 6)}
+                    </div>
+                    <div className="mt-0.5 text-xs text-silk-text-tertiary">
+                      {job.ownerSolName ?? truncateMiddle(job.ownerId, 6, 4)}
+                    </div>
+                  </div>
+                  <span className="hidden sm:block">
+                    <span className="neo-pill flex h-7 min-w-[28px] items-center justify-center px-2.5 text-[12px] font-semibold text-silk-primary">
+                      {job.agentCount ?? 0}
+                    </span>
+                  </span>
+                  <span className="hidden md:block">
+                    <StatusBadge status={job.status} />
+                  </span>
+                  <span className="hidden text-xs text-silk-text-tertiary lg:block">
+                    {formatRelativeTime(job.createdAt)}
+                  </span>
+                  <Link
+                    to={`/jobs/${job.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="neo-button px-3 py-1.5 text-xs"
+                  >
+                    View
+                  </Link>
+                </button>
+              ))}
+            </>
+          )}
+        </motion.section>
       </div>
     </div>
+  );
+}
+
+function ActivityChart({ jobId }: { jobId: string }) {
+  const messagesQuery = useQuery({
+    queryKey: ["messages-activity", jobId],
+    queryFn: async () =>
+      unwrapEnvelope(
+        (
+          await apiClient.get<ApiEnvelope<{ items: Array<{ createdAt: string }> }>>(
+            "/messages",
+            { params: { jobId, limit: 200 } }
+          )
+        ).data
+      ),
+    refetchInterval: 30_000
+  });
+
+  const hourlyData = Array.from({ length: 24 }, (_, i) => {
+    const hour = new Date();
+    hour.setMinutes(0, 0, 0);
+    hour.setHours(hour.getHours() - (23 - i));
+    const next = new Date(hour);
+    next.setHours(next.getHours() + 1);
+    const count =
+      messagesQuery.data?.items.filter((m) => {
+        const t = new Date(m.createdAt).getTime();
+        return t >= hour.getTime() && t < next.getTime();
+      }).length ?? 0;
+    return {
+      time: hour.toLocaleTimeString("en-US", { hour: "2-digit", hour12: false }),
+      messages: count
+    };
+  });
+
+  if (messagesQuery.isLoading) {
+    return <SkeletonBlock className="mt-6 h-64 rounded-[20px]" />;
+  }
+  if (messagesQuery.isError) {
+    return (
+      <div className="mt-6 flex flex-col items-center py-8 text-center">
+        <WarningIcon className="h-10 w-10 text-amber-400" />
+        <p className="mt-3 text-sm text-silk-text-secondary">Activity data unavailable for this job.</p>
+      </div>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={248} className="mt-4">
+      <LineChart data={hourlyData}>
+        <defs>
+          <linearGradient id="activityGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <XAxis
+          dataKey="time"
+          tick={{ fontSize: 11, fill: "rgb(var(--tm-color-text-tertiary))" }}
+          tickLine={false}
+          axisLine={false}
+          interval={3}
+        />
+        <YAxis
+          tick={{ fontSize: 11, fill: "rgb(var(--tm-color-text-tertiary))" }}
+          tickLine={false}
+          axisLine={false}
+          width={28}
+          allowDecimals={false}
+        />
+        <Tooltip
+          contentStyle={{
+            background: "rgb(var(--tm-color-bg))",
+            border: "none",
+            borderRadius: "14px",
+            boxShadow: "var(--tm-shadow-neo)",
+            fontSize: "13px"
+          }}
+          formatter={(v) => [v, "Messages"]}
+        />
+        <Line
+          type="monotone"
+          dataKey="messages"
+          stroke="#6366f1"
+          strokeWidth={2}
+          dot={false}
+          activeDot={{ r: 4, fill: "#6366f1" }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
   );
 }

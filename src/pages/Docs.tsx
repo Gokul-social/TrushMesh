@@ -961,6 +961,52 @@ confirmer.owner.sol
           />
           <ApiEndpointCard
             method="GET"
+            path="/jobs/:id"
+            description="Get full job details including agent tree and message count."
+            responseSchema={`
+{
+  "data": {
+    "id": "cm4x...",
+    "onchainId": "a7f3c2...",
+    "description": "Rebalance SOL/USDC to 60/40",
+    "status": "ACTIVE",
+    "agents": [
+      {
+        "id": "ag1...",
+        "solSubName": "planner.alice.sol",
+        "type": "PLANNER",
+        "status": "ACTIVE",
+        "actionCount": 5
+      }
+    ],
+    "messageCount": 12
+  }
+}
+            `}
+          />
+          <ApiEndpointCard
+            method="GET"
+            path="/agents"
+            description="List all agents with optional filtering by search query, status, and type. Supports pagination."
+            responseSchema={`
+{
+  "data": [
+    {
+      "id": "ag1...",
+      "solSubName": "planner.alice.sol",
+      "type": "PLANNER",
+      "status": "ACTIVE",
+      "wallet": "FvW8...",
+      "job": { "id": "cm4x...", "onchainId": "a7f3c2..." },
+      "actionCount": 5,
+      "spawnedAt": "2026-05-10T14:35:00Z"
+    }
+  ]
+}
+            `}
+          />
+          <ApiEndpointCard
+            method="GET"
             path="/graph/:jobId"
             description="Return the current graph snapshot for a job, including agent nodes and delegation edges."
             responseSchema={`
@@ -1007,6 +1053,65 @@ confirmer.owner.sol
     "status": "ACTIVE",
     "actionCount": 12,
     "walletAddr": "9xQeWvG816bUb..."
+  }
+}
+            `}
+          />
+          <ApiEndpointCard
+            method="POST"
+            path="/agents/:id/revoke"
+            description="Revoke an agent and cascade revocation to all descendant agents. Requires an on-chain revocation transaction hash."
+            requestSchema={`
+{
+  "revokeTxHash": "7Kp2..."
+}
+            `}
+            responseSchema={`
+{
+  "data": {
+    "revokedId": "ag1...",
+    "cascadeCount": 2
+  }
+}
+            `}
+          />
+          <ApiEndpointCard
+            method="POST"
+            path="/messages"
+            description="Log a new inter-agent delegation message. The Ed25519 signature is verified against the sender's registered wallet."
+            requestSchema={`
+{
+  "jobId": "cm4x...",
+  "senderSolName": "planner.alice.sol",
+  "receiverSolName": "executor.alice.sol",
+  "action": "Fetch SOL/USDC price",
+  "txHash": "5Zx9...",
+  "signatureHex": "a3f9..."
+}
+            `}
+            responseSchema={`
+{
+  "data": {
+    "id": "msg1...",
+    "verified": true,
+    "senderName": "planner.alice.sol",
+    "receiverName": "executor.alice.sol",
+    "action": "Fetch SOL/USDC price"
+  }
+}
+            `}
+          />
+          <ApiEndpointCard
+            method="GET"
+            path="/stats/global"
+            description="Get global platform statistics — active job count, total agents, total messages, and unauthorized action count."
+            responseSchema={`
+{
+  "data": {
+    "activeJobs": 12,
+    "totalAgents": 47,
+    "totalMessages": 328,
+    "unauthorizedActions": 0
   }
 }
             `}
