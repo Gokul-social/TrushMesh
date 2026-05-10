@@ -111,10 +111,11 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
     return () => window.clearTimeout(timeout);
   }, [lastMessage]);
 
-  const nodesSource =
-    Array.from(liveAgents.values()).filter((agent) => agent.jobId === jobId).length > 0
-      ? Array.from(liveAgents.values()).filter((agent) => agent.jobId === jobId)
-      : graphQuery.data?.nodes ?? [];
+  const nodesSource = (
+    Array.from(liveAgents.values()).filter((agent) => agent?.jobId === jobId).length > 0
+      ? Array.from(liveAgents.values()).filter((agent) => agent?.jobId === jobId)
+      : graphQuery.data?.nodes ?? []
+  ).filter((n): n is Agent => n != null);
 
   const nodeMap = new Map(nodesSource.map((node) => [node.id, node]));
 
@@ -260,7 +261,7 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
           </filter>
         </defs>
 
-        {renderEdges.map((edge) => {
+        {renderEdges.filter((e): e is SizedEdge => e != null && e.source != null && e.target != null).map((edge) => {
           const sourceStatus = edge.source.status;
           const targetStatus = edge.target.status;
           const revoked = sourceStatus === "REVOKED" || targetStatus === "REVOKED";
@@ -285,7 +286,7 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
           );
         })}
 
-        {renderNodes.map((node) => {
+        {renderNodes.filter((n): n is SizedNode => n != null).map((node) => {
           const tone = statusColor(node.status);
           const isRoot = node.parentAgentId === null;
           const flashing = flashAgentIds.includes(node.id);

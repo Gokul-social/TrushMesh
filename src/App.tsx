@@ -7,11 +7,11 @@ import { Landing } from "./pages/Landing";
 
 class RootErrorBoundary extends Component<
   { children: ReactNode },
-  { error: Error | null }
+  { error: Error | null; componentStack: string | null }
 > {
   constructor(props: { children: ReactNode }) {
     super(props);
-    this.state = { error: null };
+    this.state = { error: null, componentStack: null };
   }
 
   static getDerivedStateFromError(error: Error) {
@@ -20,6 +20,7 @@ class RootErrorBoundary extends Component<
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("[TrustMesh] Uncaught render error:", error, info);
+    this.setState({ componentStack: info.componentStack ?? null });
   }
 
   render() {
@@ -74,6 +75,7 @@ class RootErrorBoundary extends Component<
             }}
           >
             {this.state.error.message}
+            {this.state.componentStack ? `\n\nComponent stack:${this.state.componentStack}` : ""}
           </pre>
         </div>
       );
