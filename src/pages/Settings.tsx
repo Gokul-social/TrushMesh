@@ -76,16 +76,13 @@ function SectionNav({
   onJump: (sectionId: SectionId) => void;
 }) {
   return (
-    <div className="tm-shell-card p-3">
-      <div className="px-3 pb-3 pt-2">
+    <div className="tm-shell-card p-2">
+      <div className="px-3 pt-3 pb-2">
         <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-silk-text-tertiary">
-          Settings Map
+          Settings
         </div>
-        <p className="mt-2 text-sm leading-6 text-silk-text-secondary">
-          Jump between sections without leaving the app shell.
-        </p>
       </div>
-      <nav className="space-y-1" aria-label="Settings sections">
+      <nav className="space-y-0.5" aria-label="Settings sections">
         {sectionMeta.map((section) => {
           const active = section.id === activeSection;
           return (
@@ -94,17 +91,14 @@ function SectionNav({
               type="button"
               aria-current={active ? "true" : undefined}
               className={cx(
-                "tm-focus-ring flex w-full items-start gap-3 rounded-[22px] px-4 py-4 text-left transition",
+                "tm-focus-ring flex w-full items-center rounded-[18px] px-3 py-2.5 text-left transition",
                 active
                   ? "neo-inset text-silk-primary"
-                  : "text-silk-text-secondary hover:text-silk-text-primary hover:shadow-neo"
+                  : "text-silk-text-secondary hover:text-silk-text-primary hover:bg-white/30"
               )}
               onClick={() => onJump(section.id)}
             >
-              <span className="mt-0.5 text-xs font-bold uppercase tracking-[0.18em]">
-                {section.label}
-              </span>
-              <span className="text-xs leading-5 text-silk-text-tertiary">{section.summary}</span>
+              <span className="text-sm font-medium">{section.label}</span>
             </button>
           );
         })}
@@ -128,12 +122,9 @@ function SectionCard({
 }) {
   return (
     <section id={id} ref={sectionRef} className="tm-shell-card scroll-mt-28 px-5 py-5 md:px-6 md:py-6">
-      <div className="border-b border-white/60 pb-5">
-        <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-silk-text-tertiary">
-          {title}
-        </div>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-silk-text-primary">{title}</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-silk-text-secondary">{description}</p>
+      <div className="border-b border-white/60 pb-4">
+        <h2 className="text-lg font-semibold tracking-tight text-silk-text-primary">{title}</h2>
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-silk-text-secondary">{description}</p>
       </div>
       <div className="mt-5">{children}</div>
     </section>
@@ -323,51 +314,49 @@ export function Settings() {
     <div className="min-h-[calc(100vh-5rem)] p-4 pb-24 md:p-6 lg:p-8">
       <div className="mx-auto max-w-[1480px] space-y-6">
         <section className="tm-shell-card overflow-hidden px-6 py-6 md:px-8">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px] xl:items-center">
             <div>
               <div className="tm-kicker">Configuration</div>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight text-silk-text-primary md:text-5xl">
-                TrustMesh settings
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-silk-text-primary md:text-4xl">
+                Settings
               </h1>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-silk-text-secondary">
-                Manage how the explorer looks, connects, refreshes, and surfaces trust-critical signals.
-                Preferences are saved locally on this device and apply immediately across the app.
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-silk-text-secondary">
+                Preferences are saved locally and apply immediately across the app.
               </p>
 
-              <div className="mt-6 flex flex-wrap gap-3">
-                <div className="neo-pill text-sm font-semibold text-silk-text-primary">
-                  Theme: {themePreference === "system" ? `System Default → ${resolvedThemeLabel}` : resolvedThemeLabel}
+              <div className="mt-5 flex flex-wrap gap-2">
+                <div className="neo-pill text-xs font-semibold text-silk-text-secondary">
+                  Theme: <span className="text-silk-text-primary">{themePreference === "system" ? `System (${resolvedThemeLabel})` : resolvedThemeLabel}</span>
                 </div>
-                <div className="neo-pill text-sm font-semibold text-silk-text-primary">
-                  RPC: {rpcPresetOptions.find((option) => option.value === rpcPreset)?.label ?? "Runtime default"}
+                <div className="neo-pill text-xs font-semibold text-silk-text-secondary">
+                  RPC: <span className="text-silk-text-primary">{rpcPresetOptions.find((o) => o.value === rpcPreset)?.label ?? "Runtime default"}</span>
                 </div>
-                <div className="neo-pill text-sm font-semibold text-silk-text-primary">
-                  Alerts enabled: {notificationCount}/4
+                <div className="neo-pill text-xs font-semibold text-silk-text-secondary">
+                  Alerts: <span className="text-silk-text-primary">{notificationCount}/4 on</span>
                 </div>
               </div>
             </div>
 
-            <div className="tm-control-surface rounded-[28px] p-5">
-              <div className="flex items-center gap-3">
-                <span className="neo-raised flex h-11 w-11 items-center justify-center rounded-2xl text-silk-primary">
-                  <SupportIcon className="h-5 w-5" />
+            <div className="tm-control-surface-muted rounded-[24px] p-4 space-y-3">
+              <div className="flex items-center gap-2.5">
+                <span className="neo-raised flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-silk-primary">
+                  <SupportIcon className="h-4 w-4" />
                 </span>
-                <div>
-                  <div className="text-sm font-semibold text-silk-text-primary">Preference status</div>
-                  <div className="text-sm text-silk-text-secondary">
-                    {themePreference === "system"
-                      ? `Following your OS ${systemColorScheme} theme.`
-                      : "Using a pinned app theme."}
-                  </div>
+                <div className="text-sm text-silk-text-secondary">
+                  {themePreference === "system"
+                    ? `OS ${systemColorScheme} theme active`
+                    : "Pinned app theme"}
                 </div>
               </div>
-
-              <div className="mt-5 space-y-3">
-                <InfoRow label="Effective RPC" value={effectiveRpcEndpoint} />
-                <InfoRow
-                  label="Realtime Transport"
-                  value={runtimeConfig.enableRealtime ? "WebSocket updates enabled" : "Polling-driven refreshes"}
-                />
+              <div className="neo-inset rounded-[16px] px-3 py-2">
+                <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-silk-text-tertiary">RPC</div>
+                <div className="mt-0.5 truncate font-mono text-xs text-silk-text-primary">{effectiveRpcEndpoint}</div>
+              </div>
+              <div className="neo-inset rounded-[16px] px-3 py-2">
+                <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-silk-text-tertiary">Transport</div>
+                <div className="mt-0.5 text-xs text-silk-text-primary">
+                  {runtimeConfig.enableRealtime ? "WebSocket" : "Polling"}
+                </div>
               </div>
             </div>
           </div>
@@ -394,7 +383,7 @@ export function Settings() {
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">
+        <div className="grid gap-6 xl:grid-cols-[200px_minmax(0,1fr)]">
           <aside className="hidden xl:block">
             <div className="sticky top-28">
               <SectionNav activeSection={activeSection} onJump={jumpToSection} />
@@ -420,8 +409,10 @@ export function Settings() {
                       key={theme.id}
                       type="button"
                       className={cx(
-                        "tm-focus-ring tm-control-surface rounded-[26px] p-4 text-left transition hover:-translate-y-0.5",
-                        selected && "border border-silk-primary/30 shadow-neoInset"
+                        "tm-focus-ring tm-control-surface rounded-[26px] p-4 text-left transition",
+                        selected
+                          ? "border border-silk-primary/30 shadow-neoInset"
+                          : "hover:border-silk-primary/20"
                       )}
                       onClick={() => setThemePreference(theme.id)}
                     >

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Cell,
@@ -56,10 +55,7 @@ function StatCard({
       <div className="flex items-center gap-2">
         <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-silk-text-tertiary">{title}</div>
         {pulse && (
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-silk-primary opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-silk-primary" />
-          </span>
+          <span className="inline-flex h-2 w-2 rounded-full bg-silk-primary opacity-80" />
         )}
       </div>
       <div className={`mt-3 text-3xl font-semibold tracking-tight ${toneClass}`}>{value}</div>
@@ -165,11 +161,7 @@ export function Analytics() {
             onRetry={() => void statsQuery.refetch()}
           />
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
-          >
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard
               title="Total Jobs"
               value={String(jobs.length)}
@@ -195,18 +187,13 @@ export function Analytics() {
               caption="Flagged actions that failed verification."
               tone="warning"
             />
-          </motion.div>
+          </div>
         )}
 
         {/* Charts row */}
         <div className="grid gap-6 xl:grid-cols-2">
           {/* Pie chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.15 }}
-            className="tm-shell-card p-6"
-          >
+          <div className="tm-shell-card p-6">
             <h2 className="text-base font-semibold text-silk-text-primary">Job Status Distribution</h2>
             <p className="mt-1 text-sm text-silk-text-secondary">Breakdown of all jobs by current status.</p>
 
@@ -257,16 +244,10 @@ export function Analytics() {
                 </PieChart>
               </ResponsiveContainer>
             )}
-          </motion.div>
+          </div>
 
           {/* Line chart placeholder */}
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            viewport={{ once: true, amount: 0.15 }}
-            className="tm-shell-card p-6"
-          >
+          <div className="tm-shell-card p-6">
             <h2 className="text-base font-semibold text-silk-text-primary">Agent Activity Timeline</h2>
             <p className="mt-1 text-sm text-silk-text-secondary">Message events over the last 24 hours.</p>
 
@@ -281,16 +262,11 @@ export function Analytics() {
                 <Link to="/explorer" className="neo-button mt-4 text-sm">Go to Explorer</Link>
               </div>
             )}
-          </motion.div>
+          </div>
         </div>
 
         {/* Top jobs table */}
-        <motion.section
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }}
-          className="tm-shell-card overflow-hidden"
-        >
+        <section className="tm-shell-card overflow-hidden">
           <div className="border-b border-white/20 px-6 py-4">
             <h2 className="text-base font-semibold text-silk-text-primary">Top Active Jobs</h2>
             <p className="mt-0.5 text-sm text-silk-text-secondary">Sorted by agent count, showing top 10.</p>
@@ -355,7 +331,7 @@ export function Analytics() {
               ))}
             </>
           )}
-        </motion.section>
+        </section>
       </div>
     </div>
   );

@@ -43,14 +43,14 @@ export default {
           "100%": { filter: "brightness(1)" }
         },
         softPulse: {
-          "0%, 100%": { opacity: "0.6" },
+          "0%, 100%": { opacity: "0.78" },
           "50%": { opacity: "1" }
         }
       },
       animation: {
-        ringPulse: "ringPulse 2s ease-in-out infinite",
+        ringPulse: "ringPulse 2.5s ease-in-out infinite",
         nodeFlash: "nodeFlash 0.9s ease-in-out",
-        softPulse: "softPulse 1.8s ease-in-out infinite"
+        softPulse: "softPulse 2.4s ease-in-out infinite"
       }
     }
   },
