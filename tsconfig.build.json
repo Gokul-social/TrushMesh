@@ -17,6 +17,7 @@
     "src/types",
     "src/stores",
     "src/lib/axios.ts",
+    "src/lib/demoData.ts",
     "src/lib/runtimeConfig.ts",
     "src/lib/utils.ts",
     "src/lib/websocket.ts",
