@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { WalletMultiButton, useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { apiClient } from "../lib/axios";
 import { cx, getJwtFromLocalStorage, truncateMiddle, unwrapEnvelope } from "../lib/utils";
@@ -10,6 +10,7 @@ import type { ApiEnvelope, AuthUser } from "../types";
 import {
   AnalyticsIcon,
   DotIcon,
+  LockIcon,
   NodeGraphIcon,
   RocketIcon,
   SearchIcon,
@@ -69,6 +70,19 @@ const railLinks = [
   }
 ] as const;
 
+function LoginButton() {
+  const { setVisible } = useWalletModal();
+  return (
+    <button
+      className="tm-button-primary flex items-center gap-2"
+      onClick={() => setVisible(true)}
+    >
+      <LockIcon className="h-4 w-4" />
+      Connect Wallet
+    </button>
+  );
+}
+
 function SearchPill() {
   return (
     <div className="hidden items-center gap-3 rounded-full border border-white/70 bg-silk-bg/90 px-4 py-3 shadow-neoInset lg:flex">
@@ -111,7 +125,7 @@ function WalletStatus() {
     (wallet.publicKey ? truncateMiddle(wallet.publicKey.toBase58(), 6, 4) : "Connected");
 
   if (!wallet.connected) {
-    return <WalletMultiButton className="tm-wallet-shell" />;
+    return <LoginButton />;
   }
 
   if (userQuery.isLoading) {
@@ -166,12 +180,13 @@ function WalletStatus() {
 
 export function AppShell() {
   const location = useLocation();
+  const { connected } = useWallet();
 
   return (
     <div className="min-h-screen bg-silk-bg text-silk-text-primary">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/50 bg-silk-bg/90 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-[1600px] items-center gap-4 px-4 md:px-6">
-          <Link to="/explorer" className="flex items-center gap-3 text-silk-text-primary no-underline">
+          <Link to={connected ? "/explorer" : "/"} className="flex items-center gap-3 text-silk-text-primary no-underline">
             <span className="neo-raised flex h-11 w-11 items-center justify-center rounded-2xl text-silk-primary">
               <NodeGraphIcon className="h-5 w-5" />
             </span>
