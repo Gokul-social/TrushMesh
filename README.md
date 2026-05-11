@@ -6,7 +6,7 @@
   </p>
   
   <p>
-    <a href="#"><img src="https://img.shields.io/badge/LIVE_APP-TrustMesh-7c3aed?style=for-the-badge" alt="Live App" /></a>
+    <a href="https://trush-mesh.vercel.app/"><img src="https://img.shields.io/badge/LIVE_APP-trush--mesh.vercel.app-7c3aed?style=for-the-badge" alt="Live App" /></a>
     <a href="https://explorer.solana.com/address/66DXeSqBccWxWWw9S21vxe2Mvvqqkmw5KsK5jqA42quz?cluster=devnet"><img src="https://img.shields.io/badge/CONTRACT-Solana_Explorer-4edea2?style=for-the-badge" alt="Contract" /></a>
   </p>
 
@@ -44,7 +44,7 @@
 
 | Component          | URL                                                                                                               |  Status  |
 | :----------------- | :---------------------------------------------------------------------------------------------------------------- | :------: |
-| **Frontend**       | [trustmesh.app](#) _(placeholder)_                                                                                |   Live   |
+| **Frontend**       | [trush-mesh.vercel.app](https://trush-mesh.vercel.app/)                                                                                |   Live   |
 | **Smart Contract** | [`66DXe...2quz`](https://explorer.solana.com/address/66DXeSqBccWxWWw9S21vxe2Mvvqqkmw5KsK5jqA42quz?cluster=devnet) | Deployed |
 | **Network**        | Solana Devnet                                                                                                     |  Active  |
 
@@ -326,7 +326,7 @@ No one on Solana has built:
   <br />
   <p>Built on <strong>Solana</strong> · Powered by <strong>Anchor</strong> & <strong>SNS</strong></p>
   <p>
-    <a href="#">Live App</a> · 
+    <a href="https://trush-mesh.vercel.app/">Live App</a> · 
     <a href="https://explorer.solana.com/address/66DXeSqBccWxWWw9S21vxe2Mvvqqkmw5KsK5jqA42quz?cluster=devnet">Contract</a>
   </p>
 </div>
