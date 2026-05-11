@@ -93,7 +93,7 @@ _(Track: Agent Identity + Social Identity — SNS Frontier Hackathon)_
 
 ## Demo Video
 
-> [**Watch the full demo walkthrough →**](#)
+> [**Watch the full demo walkthrough →**](https://drive.google.com/file/d/1YJX7XwbBFOHEeMVjxPEkrJGLjZtb1mr6/view?usp=sharing)
 >
 > Covers: Deploying an agent swarm · SNS identity registration · Live D3 graph visualization · Cascade revocation
 
