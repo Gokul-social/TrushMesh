@@ -42,11 +42,11 @@
 
 ## Live Deployment
 
-| Component | URL | Status |
-|:---|:---|:---:|
-| **Frontend** | [trustmesh.app](#) *(placeholder)* | Live |
+| Component          | URL                                                                                                               |  Status  |
+| :----------------- | :---------------------------------------------------------------------------------------------------------------- | :------: |
+| **Frontend**       | [trustmesh.app](#) _(placeholder)_                                                                                |   Live   |
 | **Smart Contract** | [`66DXe...2quz`](https://explorer.solana.com/address/66DXeSqBccWxWWw9S21vxe2Mvvqqkmw5KsK5jqA42quz?cluster=devnet) | Deployed |
-| **Network** | Solana Devnet | Active |
+| **Network**        | Solana Devnet                                                                                                     |  Active  |
 
 ### Contract Details
 
@@ -60,24 +60,32 @@ Framework     : Anchor v0.30
 
 ## Screenshots
 
-*(Track: Agent Identity + Social Identity — SNS Frontier Hackathon)*
+_(Track: Agent Identity + Social Identity — SNS Frontier Hackathon)_
 
 <table>
   <tr>
-    <td align="center"><b>TrustMesh Dashboard</b></td>
+    <td align="center"><b>TrustMesh Landing</b></td>
     <td align="center"><b>Agent Hierarchy Graph</b></td>
   </tr>
   <tr>
-    <td><img src="https://placehold.co/600x400/131318/7c3aed?text=TrustMesh+Dashboard" alt="Dashboard Placeholder" width="100%"/></td>
-    <td><img src="https://placehold.co/600x400/131318/7c3aed?text=Live+Agent+Graph" alt="Agent Graph" width="100%"/></td>
+    <td><img src="./Public_screenshots/01_landing.png" alt="TrustMesh Landing" width="100%"/></td>
+    <td><img src="./Public_screenshots/04_job_detail.png" alt="Agent Graph" width="100%"/></td>
   </tr>
   <tr>
-    <td align="center"><b>Instant Cascade Revocation</b></td>
-    <td align="center"><b>On-Chain Audit Log</b></td>
+    <td align="center"><b>Nodes Registry</b></td>
+    <td align="center"><b>Analytics Dashboard</b></td>
   </tr>
   <tr>
-    <td><img src="https://placehold.co/600x400/131318/7c3aed?text=Cascade+Revoke" alt="Revocation Modal" width="100%"/></td>
-    <td><img src="https://placehold.co/600x400/131318/7c3aed?text=Immutable+Audit+Trail" alt="Logs" width="100%"/></td>
+    <td><img src="./Public_screenshots/03_nodes.png" alt="Nodes Registry" width="100%"/></td>
+    <td><img src="./Public_screenshots/06_analytics.png" alt="Analytics Dashboard" width="100%"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Deploy Agent</b></td>
+    <td align="center"><b>Settings</b></td>
+  </tr>
+  <tr>
+    <td><img src="./Public_screenshots/05_deploy.png" alt="Deploy Agent" width="100%"/></td>
+    <td><img src="./Public_screenshots/07_settings.png" alt="Settings" width="100%"/></td>
   </tr>
 </table>
 
@@ -129,11 +137,11 @@ graph TD
     %% Connections
     UI -- "HTTP Requests" --> API_REST
     WS_Client <-->|"Real-time Data"| WS_Server
-    
+
     API_REST -- "Read/Write" --> DB
     WS_Server <-->|"Pub/Sub"| Cache
     Queues <-->|"Worker State"| Cache
-    
+
     Backend <-->|"RPC (Tx / Events)"| Anchor
     Backend -- "Resolve Agent Identity" --> SNS
 
@@ -185,41 +193,43 @@ sequenceDiagram
 
 ## Protocol Features
 
-| Feature | Description |
-|:---|:---|
-| **Identity Layer** | Every agent gets a unique `.sol` sub-name (e.g., `planner.alice.sol`) anchored to SNS |
-| **Audit Trail** | Every inter-agent message is signed and logged on Solana via our Anchor program |
-| **Instant Revocation** | Humans can revoke any agent's signing authority; halting cascades to all descendants |
-| **Visual Explorer** | A D3-powered graph shows live agent hierarchy, delegation flows & action logs |
-| **Zero-Trust Sync** | Ed25519 signature validation ensures agents cannot impersonate each other |
-| **WebSockets** | Live, real-time node visualizations backed by Redis pub/sub and bullMQ |
+| Feature                | Description                                                                           |
+| :--------------------- | :------------------------------------------------------------------------------------ |
+| **Identity Layer**     | Every agent gets a unique `.sol` sub-name (e.g., `planner.alice.sol`) anchored to SNS |
+| **Audit Trail**        | Every inter-agent message is signed and logged on Solana via our Anchor program       |
+| **Instant Revocation** | Humans can revoke any agent's signing authority; halting cascades to all descendants  |
+| **Visual Explorer**    | A D3-powered graph shows live agent hierarchy, delegation flows & action logs         |
+| **Zero-Trust Sync**    | Ed25519 signature validation ensures agents cannot impersonate each other             |
+| **WebSockets**         | Live, real-time node visualizations backed by Redis pub/sub and bullMQ                |
 
 ---
 
 ## Technology Stack
 
-| Layer | Technology | Function |
-|:---|:---|:---|
-| **Blockchain** | Solana Devnet & SNS | Immutable ledger and resolving agent `.sol` identities |
-| **Smart Contract**| Rust + Anchor 0.30 | TrustMesh protocol logic and validation |
-| **Backend** | Fastify + TypeScript | High-performance server with REST and WS support |
-| **Database** | PostgreSQL 16 + Prisma | Relational state management |
-| **Cache / Queue** | Redis 7 + BullMQ | Fast reads and background job workers |
-| **Frontend** | React 18 + Vite | User interface rendering |
-| **Styling** | Tailwind CSS + Silk | Neomorphic / Glassmorphic UI layout |
-| **Visualization**| D3.js v7 | Real-time force graph and tree layout mapping |
+| Layer              | Technology             | Function                                               |
+| :----------------- | :--------------------- | :----------------------------------------------------- |
+| **Blockchain**     | Solana Devnet & SNS    | Immutable ledger and resolving agent `.sol` identities |
+| **Smart Contract** | Rust + Anchor 0.30     | TrustMesh protocol logic and validation                |
+| **Backend**        | Fastify + TypeScript   | High-performance server with REST and WS support       |
+| **Database**       | PostgreSQL 16 + Prisma | Relational state management                            |
+| **Cache / Queue**  | Redis 7 + BullMQ       | Fast reads and background job workers                  |
+| **Frontend**       | React 18 + Vite        | User interface rendering                               |
+| **Styling**        | Tailwind CSS + Silk    | Neomorphic / Glassmorphic UI layout                    |
+| **Visualization**  | D3.js v7               | Real-time force graph and tree layout mapping          |
 
 ---
 
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 20+
 - Docker + Docker Compose
 - Solana CLI 1.18.x
 - Anchor CLI 0.30.x
 
 ### 1. Clone & Install
+
 ```bash
 git clone <repo-url>
 cd trustmesh
@@ -228,11 +238,13 @@ cd agent-runtime && npm install && cd ..
 ```
 
 ### 2. Start Infrastructure
+
 ```bash
 docker compose up -d  # Postgres + Redis
 ```
 
 ### 3. Configure Environment
+
 ```bash
 cp .env.example .env
 # Required updates:
@@ -241,12 +253,14 @@ cp .env.example .env
 ```
 
 ### 4. Database Prep
+
 ```bash
 npm run prisma:migrate
 npm run prisma:seed
 ```
 
 ### 5. Services Startup
+
 ```bash
 # Terminal 1 - Start Backend (Listens on :3001)
 npm run dev
@@ -256,6 +270,7 @@ npm run frontend:dev
 ```
 
 ### 6. Run Demo Agent Runtime
+
 ```bash
 cd agent-runtime
 cp .env.example .env
@@ -267,7 +282,8 @@ solana-keygen new --outfile demo-wallet.json --no-bip39-passphrase
 # Run the demo
 npm run demo
 ```
-*Open `http://localhost:5173` and watch the graph populate!*
+
+_Open `http://localhost:5173` and watch the graph populate!_
 
 ---
 
@@ -298,6 +314,7 @@ trustmesh/
 ## What Makes This Novel
 
 No one on Solana has built:
+
 1. **Hierarchical agent identity** using SNS sub-domains — `.sol` names aren't just for humans anymore.
 2. **On-chain delegation logs** with Ed25519 verification for provably signed inter-agent messaging.
 3. **Real-time graph visualization** mapping multi-agent coordination with D3 force graph.
