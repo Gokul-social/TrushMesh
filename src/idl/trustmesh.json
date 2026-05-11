@@ -6,7 +6,29 @@
     "spec": "0.1.0",
     "description": "TrustMesh coordination and audit program"
   },
-  "instructions": [],
+  "instructions": [
+    {
+      "name": "initializeJob",
+      "discriminator": [137, 22, 138, 41, 76, 208, 114, 50],
+      "accounts": [
+        { "name": "owner", "writable": true, "signer": true },
+        { "name": "job", "writable": true, "pda": {
+          "seeds": [
+            { "kind": "const", "value": [106, 111, 98] },
+            { "kind": "account", "path": "owner" },
+            { "kind": "arg", "path": "jobId" }
+          ]
+        }},
+        { "name": "systemProgram", "address": "11111111111111111111111111111111" }
+      ],
+      "args": [
+        { "name": "jobId", "type": { "array": ["u8", 32] } },
+        { "name": "descriptionHash", "type": { "array": ["u8", 32] } },
+        { "name": "template", "type": "u8" },
+        { "name": "budgetLamports", "type": "u64" }
+      ]
+    }
+  ],
   "accounts": [
     {
       "name": "jobAccount",
