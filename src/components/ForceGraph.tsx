@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import * as d3 from "d3";
 import { useQuery } from "@tanstack/react-query";
@@ -101,6 +101,13 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
   }, []);
 
   useEffect(() => {
+    simulationRef.current?.stop();
+    simulationRef.current = null;
+    setRenderNodes([]);
+    setRenderEdges([]);
+  }, [jobId]);
+
+  useEffect(() => {
     if (!lastMessage) {
       return;
     }
@@ -111,25 +118,31 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
     return () => window.clearTimeout(timeout);
   }, [lastMessage]);
 
-  const nodesSource = (
-    Array.from(liveAgents.values()).filter((agent) => agent?.jobId === jobId).length > 0
-      ? Array.from(liveAgents.values()).filter((agent) => agent?.jobId === jobId)
-      : graphQuery.data?.nodes ?? []
-  ).filter((n): n is Agent => n != null);
+  const nodesSource = useMemo(() => {
+    const liveList = Array.from(liveAgents.values()).filter(
+      (agent): agent is Agent => agent != null && agent.jobId === jobId
+    );
+    return (liveList.length > 0 ? liveList : graphQuery.data?.nodes ?? []).filter(
+      (n): n is Agent => n != null
+    );
+  }, [liveAgents, jobId, graphQuery.data]);
 
-  const nodeMap = new Map(nodesSource.map((node) => [node.id, node]));
-
-  const edgesSource =
-    graphQuery.data?.edges.length
-      ? graphQuery.data.edges.filter((edge) => nodeMap.has(edge.source) && nodeMap.has(edge.target))
-      : nodesSource
-          .filter((node) => node.parentAgentId)
-          .map((node) => ({
-            id: `${node.parentAgentId}->${node.id}`,
-            source: node.parentAgentId as string,
-            target: node.id,
-            type: "DELEGATION" as const
-          }));
+  const edgesSource = useMemo(() => {
+    const nodeMap = new Map(nodesSource.map((node) => [node.id, node]));
+    if (graphQuery.data?.edges.length) {
+      return graphQuery.data.edges.filter(
+        (edge) => edge != null && nodeMap.has(edge.source) && nodeMap.has(edge.target)
+      );
+    }
+    return nodesSource
+      .filter((node) => node.parentAgentId)
+      .map((node) => ({
+        id: `${node.parentAgentId!}->${node.id}`,
+        source: node.parentAgentId as string,
+        target: node.id,
+        type: "DELEGATION" as const
+      }));
+  }, [nodesSource, graphQuery.data]);
 
   useEffect(() => {
     if (nodesSource.length === 0) {
@@ -224,7 +237,7 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
 
     d3.select(wrapperRef.current)
       .selectAll<SVGGElement, SizedNode>("g[data-node-id]")
-      .data(renderNodes, (node) => node.id)
+      .data(renderNodes.filter((n): n is SizedNode => n != null), (node) => node.id)
       .call(dragBehavior);
   }, [renderNodes]);
 
