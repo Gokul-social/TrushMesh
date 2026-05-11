@@ -19,6 +19,27 @@ Simulates a two-agent swarm executing a portfolio rebalancing job on Solana Devn
 - Simulates a swap with signed delegation messages
 - Posts all actions to the backend so the frontend graph updates in real time
 
+### Agent Swarm Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant H as Human User
+    participant P as Planner Agent
+    participant E as Executor Agent
+    participant J as Jupiter Protocol (DEX)
+    participant T as TrustMesh Chain / Backend
+
+    H->>P: 1. Deploy Job (On-Chain)
+    P->>T: 2. Register Planner Signed Identity
+    P->>E: 3. Delegate Rebalancing Strategy
+    E->>T: 4. Register Executor Signed Identity
+    E->>J: 5. Fetch Real-time SOL/USDC Quotes
+    J-->>E: 6. Price Targets
+    E->>T: 7. Execute Simulation & Anchor Logs (On-Chain)
+    T-->>H: 8. UI Graph Updates (via WebSockets)
+```
+
 ## Repo Notes
 
 - This backend currently creates planner/executor rows during `POST /jobs`, so the runtime reconciles those rows instead of calling a missing `POST /agents` route.

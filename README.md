@@ -30,21 +30,54 @@ Multi-agent AI systems are a black box. When a swarm of agents executes a comple
 
 ## Architecture
 
-```text
-┌─────────────┐
-│   Frontend  │  React + D3 Force Graph + Silk UI
-│ (Vite + TS) │  WebSocket: live agent status updates
-└──────┬──────┘
-       │ HTTP + WS
-┌──────▼──────────────────────────┐
-│        Backend (Fastify)        │  REST API + WebSocket broadcaster
-│  Postgres + Redis + BullMQ      │  SNS resolution, Ed25519 verification
-└──────┬──────────────────────────┘
-       │ RPC calls
-┌──────▼──────────────────────────┐
-│   Solana Devnet (RPC + Anchor)  │  On-chain: Job, Agent, Delegation logs
-│  SNS Program + TrustMesh Program│  Event emission: JobInitialized, AgentSpawned, etc.
-└─────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Client ["Client Tier"]
+        UI["Web App<br/>(React, Vite, D3.js, Silk)"]
+        WS_Client["WebSocket Client<br/>(Live Updates)"]
+        UI --- WS_Client
+    end
+
+    subgraph API ["Application Tier"]
+        Backend["Node.js Server<br/>(Express / Middleware)"]
+        API_REST["REST API"]
+        WS_Server["WebSocket<br/>Broadcaster"]
+        Queues["Job Queues"]
+        Backend --- API_REST
+        Backend --- WS_Server
+        Backend --- Queues
+    end
+
+    subgraph State ["State & Persistence"]
+        DB[(PostgreSQL<br/>Prisma)]
+        Cache[(Redis<br/>Store)]
+    end
+
+    subgraph Chain ["Blockchain Tier (Solana)"]
+        Anchor["TrustMesh<br/>Anchor Program"]
+        SNS["Solana Name<br/>Service (SNS)"]
+    end
+
+    %% Connections
+    UI -- "HTTP Requests" --> API_REST
+    WS_Client <-->|Real-time Data| WS_Server
+    
+    API_REST -- "Read/Write" --> DB
+    WS_Server <-->|"Pub/Sub"| Cache
+    Queues <-->|"Worker State"| Cache
+    
+    Backend <-->|"RPC (Tx / Events)"| Anchor
+    Backend -- "Resolve Agent Identity" --> SNS
+    
+    classDef primary fill:#4f46e5,stroke:#312e81,stroke-width:2px,color:#fff;
+    classDef secondary fill:#0ea5e9,stroke:#0369a1,stroke-width:2px,color:#fff;
+    classDef database fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff;
+    classDef chain fill:#8b5cf6,stroke:#5b21b6,stroke-width:2px,color:#fff;
+
+    class UI,WS_Client secondary;
+    class Backend,API_REST,WS_Server,Queues primary;
+    class DB,Cache database;
+    class Anchor,SNS chain;
 ```
 
 ## Quick Start
