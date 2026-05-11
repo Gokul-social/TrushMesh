@@ -1,66 +1,134 @@
-# TrustMesh
-> Every agent. Every decision. On chain.
+<div align="center">
+  <br />
+  <h1>TRUSTMESH</h1>
+  <p>
+    <strong>Every agent. Every decision. On chain.</strong>
+  </p>
+  
+  <p>
+    <a href="#"><img src="https://img.shields.io/badge/LIVE_APP-TrustMesh-7c3aed?style=for-the-badge" alt="Live App" /></a>
+    <a href="https://explorer.solana.com/address/66DXeSqBccWxWWw9S21vxe2Mvvqqkmw5KsK5jqA42quz?cluster=devnet"><img src="https://img.shields.io/badge/CONTRACT-Solana_Explorer-4edea2?style=for-the-badge" alt="Contract" /></a>
+  </p>
 
-**Track:** Agent Identity + Social Identity — SNS Frontier Hackathon  
-**Team:** [Your names]  
-**Demo:** [Live demo URL or video link]
+  <p>
+    <img src="https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" alt="React" />
+    <img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+    <img src="https://img.shields.io/badge/Solana-000000.svg?style=for-the-badge&logo=solana&logoColor=white" alt="Solana" />
+    <img src="https://img.shields.io/badge/Rust-000000.svg?style=for-the-badge&logo=rust&logoColor=white" alt="Rust" />
+    <img src="https://img.shields.io/badge/Anchor-7c3aed.svg?style=for-the-badge&logo=anchor&logoColor=white" alt="Anchor" />
+    <img src="https://img.shields.io/badge/TypeScript-000000.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  </p>
+  <br />
+</div>
 
----
-
-## What it is
-
-TrustMesh is a multi-agent AI coordination and audit platform on Solana. Every AI agent gets a verified `.sol` identity. Every inter-agent delegation is signed with Ed25519 and logged permanently on-chain. Humans can revoke any agent in one transaction — the system cascades the halt to all child agents instantly.
-
----
-
-## The Problem
-
-Multi-agent AI systems are a black box. When a swarm of agents executes a complex on-chain task (e.g., a DeFi strategy), there's no way for a human to audit which agent made which decision, whether it was authorized, or if an agent went rogue. Protocols are getting swarmed by agents with zero accountability.
-
----
-
-## How TrustMesh Solves It
-
-1. **Identity layer:** Every agent gets a unique `.sol` sub-name (e.g., `planner.alice.sol`) anchored to SNS. Agents can't impersonate each other.
-2. **Audit trail:** Every inter-agent message is signed and logged on Solana via our Anchor program. Anyone can verify the full decision tree post-execution.
-3. **Instant revocation:** Humans can revoke any agent's signing authority in one transaction. The backend cascades the halt to all descendants.
-4. **Visual explorer:** A D3-powered graph shows the live agent hierarchy, delegation flows, and action logs in real time via WebSocket.
+> **TrustMesh** is a multi-agent AI coordination and audit platform on Solana. Every AI agent gets a verified `.sol` identity. Every inter-agent delegation is signed with Ed25519 and logged permanently on-chain. Humans can revoke any agent in one transaction — the system cascades the halt to all child agents instantly.
 
 ---
 
-## Architecture
+## Table of Contents
+
+- [Live Deployment](#live-deployment)
+- [Screenshots](#screenshots)
+- [Demo Video](#demo-video)
+- [System Architecture](#system-architecture)
+- [Agent Swarm Flow](#agent-swarm-flow)
+- [Protocol Features](#protocol-features)
+- [Technology Stack](#technology-stack)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [What Makes This Novel](#what-makes-this-novel)
+
+---
+
+## Live Deployment
+
+| Component | URL | Status |
+|:---|:---|:---:|
+| **Frontend** | [trustmesh.app](#) *(placeholder)* | Live |
+| **Smart Contract** | [`66DXe...2quz`](https://explorer.solana.com/address/66DXeSqBccWxWWw9S21vxe2Mvvqqkmw5KsK5jqA42quz?cluster=devnet) | Deployed |
+| **Network** | Solana Devnet | Active |
+
+### Contract Details
+
+```
+Program ID    : 66DXeSqBccWxWWw9S21vxe2Mvvqqkmw5KsK5jqA42quz
+Network       : Devnet
+Framework     : Anchor v0.30
+```
+
+---
+
+## Screenshots
+
+*(Track: Agent Identity + Social Identity — SNS Frontier Hackathon)*
+
+<table>
+  <tr>
+    <td align="center"><b>TrustMesh Dashboard</b></td>
+    <td align="center"><b>Agent Hierarchy Graph</b></td>
+  </tr>
+  <tr>
+    <td><img src="https://placehold.co/600x400/131318/7c3aed?text=TrustMesh+Dashboard" alt="Dashboard Placeholder" width="100%"/></td>
+    <td><img src="https://placehold.co/600x400/131318/7c3aed?text=Live+Agent+Graph" alt="Agent Graph" width="100%"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Instant Cascade Revocation</b></td>
+    <td align="center"><b>On-Chain Audit Log</b></td>
+  </tr>
+  <tr>
+    <td><img src="https://placehold.co/600x400/131318/7c3aed?text=Cascade+Revoke" alt="Revocation Modal" width="100%"/></td>
+    <td><img src="https://placehold.co/600x400/131318/7c3aed?text=Immutable+Audit+Trail" alt="Logs" width="100%"/></td>
+  </tr>
+</table>
+
+---
+
+## Demo Video
+
+> [**Watch the full demo walkthrough →**](#)
+>
+> Covers: Deploying an agent swarm · SNS identity registration · Live D3 graph visualization · Cascade revocation
+
+---
+
+## System Architecture
 
 ```mermaid
 graph TD
+    classDef primary fill:#4f46e5,stroke:#312e81,stroke-width:2px,color:#fff;
+    classDef secondary fill:#0ea5e9,stroke:#0369a1,stroke-width:2px,color:#fff;
+    classDef database fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff;
+    classDef chain fill:#8b5cf6,stroke:#5b21b6,stroke-width:2px,color:#fff;
+
     subgraph Client ["Client Tier"]
-        UI["Web App<br/>(React, Vite, D3.js, Silk)"]
-        WS_Client["WebSocket Client<br/>(Live Updates)"]
+        UI["Web App<br/>(React, Vite, D3.js, Silk)"]:::secondary
+        WS_Client["WebSocket Client<br/>(Live Updates)"]:::secondary
         UI --- WS_Client
     end
 
     subgraph API ["Application Tier"]
-        Backend["Node.js Server<br/>(Express / Middleware)"]
-        API_REST["REST API"]
-        WS_Server["WebSocket<br/>Broadcaster"]
-        Queues["Job Queues"]
+        Backend["Node.js Server<br/>(Express / Middleware)"]:::primary
+        API_REST["REST API"]:::primary
+        WS_Server["WebSocket Broadcaster"]:::primary
+        Queues["Job Queues"]:::primary
         Backend --- API_REST
         Backend --- WS_Server
         Backend --- Queues
     end
 
     subgraph State ["State & Persistence"]
-        DB[(PostgreSQL<br/>Prisma)]
-        Cache[(Redis<br/>Store)]
+        DB[(PostgreSQL<br/>Prisma)]:::database
+        Cache[(Redis<br/>Store)]:::database
     end
 
     subgraph Chain ["Blockchain Tier (Solana)"]
-        Anchor["TrustMesh<br/>Anchor Program"]
-        SNS["Solana Name<br/>Service (SNS)"]
+        Anchor["TrustMesh<br/>Anchor Program"]:::chain
+        SNS["Solana Name<br/>Service (SNS)"]:::chain
     end
 
     %% Connections
     UI -- "HTTP Requests" --> API_REST
-    WS_Client <-->|Real-time Data| WS_Server
+    WS_Client <-->|"Real-time Data"| WS_Server
     
     API_REST -- "Read/Write" --> DB
     WS_Server <-->|"Pub/Sub"| Cache
@@ -68,29 +136,90 @@ graph TD
     
     Backend <-->|"RPC (Tx / Events)"| Anchor
     Backend -- "Resolve Agent Identity" --> SNS
-    
-    classDef primary fill:#4f46e5,stroke:#312e81,stroke-width:2px,color:#fff;
-    classDef secondary fill:#0ea5e9,stroke:#0369a1,stroke-width:2px,color:#fff;
-    classDef database fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff;
-    classDef chain fill:#8b5cf6,stroke:#5b21b6,stroke-width:2px,color:#fff;
 
-    class UI,WS_Client secondary;
-    class Backend,API_REST,WS_Server,Queues primary;
-    class DB,Cache database;
-    class Anchor,SNS chain;
+    style Client fill:#131318,stroke:#35343a,stroke-width:1px,stroke-dasharray:5 5
+    style API fill:#131318,stroke:#35343a,stroke-width:1px,stroke-dasharray:5 5
+    style State fill:#131318,stroke:#35343a,stroke-width:1px,stroke-dasharray:5 5
+    style Chain fill:#131318,stroke:#35343a,stroke-width:1px,stroke-dasharray:5 5
 ```
+
+---
+
+## Agent Swarm Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant H as Human User
+    participant P as Planner Agent
+    participant E as Executor Agent
+    participant J as Jupiter Protocol (DEX)
+    participant T as TrustMesh Chain / Backend
+
+    rect rgba(124, 58, 237, 0.1)
+        Note over H,T: Phase 1 — Deployment & Identity
+        H->>P: Deploy Job (On-Chain)
+        P->>T: Register Planner Signed Identity
+    end
+
+    rect rgba(78, 222, 162, 0.1)
+        Note over P,E: Phase 2 — Agent Delegation
+        P->>E: Delegate Rebalancing Strategy
+        E->>T: Register Executor Signed Identity
+    end
+
+    rect rgba(251, 171, 255, 0.1)
+        Note over E,J: Phase 3 — Interaction & Oracle
+        E->>J: Fetch Real-time SOL/USDC Quotes
+        J-->>E: Price Targets
+    end
+
+    rect rgba(245, 158, 11, 0.1)
+        Note over E,H: Phase 4 — Execution & Logs
+        E->>T: Execute Simulation & Anchor Logs (On-Chain)
+        T-->>H: UI Graph Updates (via WebSockets)
+    end
+```
+
+---
+
+## Protocol Features
+
+| Feature | Description |
+|:---|:---|
+| **Identity Layer** | Every agent gets a unique `.sol` sub-name (e.g., `planner.alice.sol`) anchored to SNS |
+| **Audit Trail** | Every inter-agent message is signed and logged on Solana via our Anchor program |
+| **Instant Revocation** | Humans can revoke any agent's signing authority; halting cascades to all descendants |
+| **Visual Explorer** | A D3-powered graph shows live agent hierarchy, delegation flows & action logs |
+| **Zero-Trust Sync** | Ed25519 signature validation ensures agents cannot impersonate each other |
+| **WebSockets** | Live, real-time node visualizations backed by Redis pub/sub and bullMQ |
+
+---
+
+## Technology Stack
+
+| Layer | Technology | Function |
+|:---|:---|:---|
+| **Blockchain** | Solana Devnet & SNS | Immutable ledger and resolving agent `.sol` identities |
+| **Smart Contract**| Rust + Anchor 0.30 | TrustMesh protocol logic and validation |
+| **Backend** | Fastify + TypeScript | High-performance server with REST and WS support |
+| **Database** | PostgreSQL 16 + Prisma | Relational state management |
+| **Cache / Queue** | Redis 7 + BullMQ | Fast reads and background job workers |
+| **Frontend** | React 18 + Vite | User interface rendering |
+| **Styling** | Tailwind CSS + Silk | Neomorphic / Glassmorphic UI layout |
+| **Visualization**| D3.js v7 | Real-time force graph and tree layout mapping |
+
+---
 
 ## Quick Start
 
 ### Prerequisites
-
 - Node.js 20+
 - Docker + Docker Compose
 - Solana CLI 1.18.x
 - Anchor CLI 0.30.x
 
-### 1. Clone and Install
-
+### 1. Clone & Install
 ```bash
 git clone <repo-url>
 cd trustmesh
@@ -99,111 +228,88 @@ cd agent-runtime && npm install && cd ..
 ```
 
 ### 2. Start Infrastructure
-
 ```bash
 docker compose up -d  # Postgres + Redis
 ```
 
 ### 3. Configure Environment
-
 ```bash
 cp .env.example .env
-# Edit .env with your values:
-#   SOLANA_RPC_URL=https://api.devnet.solana.com
-#   ANCHOR_PROGRAM_ID=66DXeSqBccWxWWw9S21vxe2Mvvqqkmw5KsK5jqA42quz
-#   DATABASE_URL=postgresql://trustmesh:trustmesh@localhost:5432/trustmesh
-#   REDIS_URL=redis://localhost:6379
+# Required updates:
+# SOLANA_RPC_URL=https://api.devnet.solana.com
+# ANCHOR_PROGRAM_ID=66DXeSqBccWxWWw9S21vxe2Mvvqqkmw5KsK5jqA42quz
 ```
 
-### 4. Run Migrations + Seed
-
+### 4. Database Prep
 ```bash
 npm run prisma:migrate
 npm run prisma:seed
 ```
 
-### 5. Start Backend
-
+### 5. Services Startup
 ```bash
-npm run dev  # Listens on :3001
+# Terminal 1 - Start Backend (Listens on :3001)
+npm run dev
+
+# Terminal 2 - Start Frontend (Listens on :5173)
+npm run frontend:dev
 ```
 
-### 6. Start Frontend (new terminal)
-
-```bash
-npm run frontend:dev  # Listens on :5173
-```
-
-### 7. Run Demo (new terminal)
-
+### 6. Run Demo Agent Runtime
 ```bash
 cd agent-runtime
 cp .env.example .env
-# Edit agent-runtime/.env:
-#   BACKEND_URL=http://localhost:3001/api/v1
-#   BACKEND_JWT=<paste from frontend after wallet login>
-#   HUMAN_WALLET_KEYPAIR_PATH=./demo-wallet.json
 
 # Generate demo wallet
 solana-keygen new --outfile demo-wallet.json --no-bip39-passphrase
 
+# Edit agent-runtime/.env based on frontend login JWT
 # Run the demo
 npm run demo
 ```
+*Open `http://localhost:5173` and watch the graph populate!*
 
-Open `http://localhost:5173` and watch the graph populate in real time.
-
-## Tech Stack
-
-| Layer | Technology |
-| --- | --- |
-| Smart Contract | Rust + Anchor 0.30 |
-| Blockchain | Solana Devnet + SNS |
-| Backend | Fastify + TypeScript |
-| Database | PostgreSQL 16 + Prisma ORM |
-| Cache/Queue | Redis 7 + BullMQ |
-| Frontend | React 18 + Vite + Tailwind |
-| Visualization | D3.js v7 (force graph + tree layout) |
-| Real-time | WebSocket + Zustand |
-| Wallet | @solana/wallet-adapter |
-| Design System | Silk (Neomorphic UI) |
+---
 
 ## Project Structure
 
 ```text
 trustmesh/
 ├── trustmesh-program/      # Anchor smart contract
-│   ├── programs/trustmesh/src/lib.rs
-│   └── tests/trustmesh.ts
-├── src/                    # Fastify backend
-│   ├── routes/             # REST endpoints
-│   ├── services/           # SNS, Anchor, crypto
-│   ├── queues/             # BullMQ workers
-│   └── websocket/          # Redis → WS fanout
-├── src/                    # React frontend (shared src/)
-│   ├── components/         # NavBar, ForceGraph, etc.
-│   ├── pages/              # Explorer, Deploy, JobDetail
-│   └── stores/             # Zustand agent state
-└── agent-runtime/          # Demo simulator
-    └── src/index.ts        # Sequential agent workflow
+│   ├── programs/           # Rust source for on-chain logic
+│   └── tests/              # Anchor TS integration tests
+├── src/                    # Full-Stack Source
+│   ├── components/         # React (ForceGraph, AppShell, RevocationModal)
+│   ├── pages/              # React Views (Explorer, Deploy, Jobs)
+│   ├── routes/             # Backend Fastify endpoints
+│   ├── services/           # SNS integration, Solana RPC, Graph mapping
+│   ├── queues/             # BullMQ (agentSync, snsRefresh)
+│   └── websocket/          # Redis → WS fanout and handlers
+├── agent-runtime/          # Demo Swarm Simulator
+│   ├── index.ts            # Bootstrapper
+│   ├── jupiter.ts          # External oracle integrations (DEX)
+│   └── anchor.ts           # Interacting with deployed contract
+├── prisma/                 # Database schemas and seeds
+└── README.md               # This file
 ```
+
+---
 
 ## What Makes This Novel
 
 No one on Solana has built:
+1. **Hierarchical agent identity** using SNS sub-domains — `.sol` names aren't just for humans anymore.
+2. **On-chain delegation logs** with Ed25519 verification for provably signed inter-agent messaging.
+3. **Real-time graph visualization** mapping multi-agent coordination with D3 force graph.
+4. **One-click cascade revocation** instantly halting an entire descendant swarms of an agent.
 
-- Hierarchical agent identity using SNS sub-domains — `.sol` names aren't just for humans anymore
-- On-chain delegation logs with Ed25519 verification — provably signed inter-agent messages
-- Real-time graph visualization of multi-agent coordination — D3 force graph + WebSocket updates
-- One-click cascade revocation — revoking a parent agent instantly halts all descendants
+---
 
-Existing projects (Blinks, Dialect) focus on human identity or simple agent wallets. TrustMesh is the first agent lineage and accountability layer native to Solana.
-
-## Team
-
-[Your name] — [Role]  
-[Teammate name] — [Role]
-
-## License
-
-MIT
+<div align="center">
+  <br />
+  <p>Built on <strong>Solana</strong> · Powered by <strong>Anchor</strong> & <strong>SNS</strong></p>
+  <p>
+    <a href="#">Live App</a> · 
+    <a href="https://explorer.solana.com/address/66DXeSqBccWxWWw9S21vxe2Mvvqqkmw5KsK5jqA42quz?cluster=devnet">Contract</a>
+  </p>
+</div>
