@@ -237,7 +237,7 @@ export function ForceGraph({ jobId, onNodeClick }: ForceGraphProps) {
 
     d3.select(wrapperRef.current)
       .selectAll<SVGGElement, SizedNode>("g[data-node-id]")
-      .data(renderNodes.filter((n): n is SizedNode => n != null), (node) => node.id)
+      .data(renderNodes.filter((n): n is SizedNode => n != null))
       .call(dragBehavior);
   }, [renderNodes]);
 
